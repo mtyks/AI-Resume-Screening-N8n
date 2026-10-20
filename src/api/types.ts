@@ -1,0 +1,128 @@
+// ชนิดข้อมูลตรงกับตารางจริงใน Supabase (ชื่อคอลัมน์เหมือนกันทุกตัว)
+// เมื่อเชื่อมฐานข้อมูลจริง ชนิดเหล่านี้ใช้ต่อได้เลย
+
+export type Role = 'HR' | 'Admin';
+
+export interface Job {
+  job_id: string;
+  position_name: string;
+  must_have_skills: string[];
+  preferred_skills: string[];
+  required_tools: string[];
+  min_experience_years: number;
+  preferred_experience_type: string | null;
+  // น้ำหนักเก็บเป็นทศนิยม 0–1 เหมือนในฐานข้อมูล (UI แสดงเป็นเปอร์เซ็นต์)
+  weight_musthave: number;
+  weight_preferred: number;
+  weight_tool: number;
+  weight_experience: number;
+  match_threshold: number;
+  is_active: boolean;
+  // ช่วงเปิดรับสมัคร (ว่าง = ไม่จำกัด) และคำอธิบายตำแหน่งที่ผู้สมัครเห็น
+  open_at?: string | null;
+  close_at?: string | null;
+  description?: string | null;
+}
+
+// ตำแหน่งที่เปิดรับอยู่ตอนนี้ (ข้อมูลที่ผู้สมัครเห็นได้)
+export interface OpenPosition {
+  job_id: string;
+  position_name: string;
+  description: string | null;
+  min_experience_years: number;
+  must_have_skills: string[];
+  preferred_skills: string[];
+  required_tools: string[];
+  close_at: string | null;
+}
+
+export type ProcessingStatus = 'pending' | 'processed' | 'failed';
+
+export interface Candidate {
+  candidate_id: string;
+  full_name: string;
+  phone_number: string;
+  email: string;
+  applied_position: string;
+  self_reported_experience_range: string | null;
+  skills: string[];
+  experience_years: number | null;
+  resume_file_url: string;
+  received_at: string;
+  application_status: string;
+  processing_status: ProcessingStatus;
+  processing_error: string | null;
+}
+
+export interface CriterionEval {
+  criterion: string;
+  confidence: number;
+  evidence: string;
+}
+
+export interface EvaluationDetail {
+  must_have_evaluation: CriterionEval[];
+  preferred_evaluation: CriterionEval[];
+  tool_evaluation: CriterionEval[];
+  experience_years?: number | null;
+  experience_relevance?: { confidence: number; evidence: string };
+}
+
+export type ScoreBasis =
+  | 'Full Assessment (Resume)'
+  | 'Partial Assessment (ใช้ช่วงปีจากฟอร์ม)'
+  | 'ค่ากลาง';
+
+export interface MatchResult {
+  match_id: number;
+  candidate_id: string;
+  job_id: string;
+  match_score: number;
+  score_basis: ScoreBasis;
+  gate_status: string; // 'Pass' หรือ 'Failed: ขาด <ทักษะ>'
+  evaluation_detail: EvaluationDetail;
+  evaluated_at: string;
+}
+
+export type LogStatus = 'Success' | 'Error';
+
+export interface SystemLog {
+  log_id: number;
+  candidate_id: string | null;
+  status: LogStatus;
+  message: string;
+  timestamp: string;
+}
+
+export interface AuthorizedUser {
+  email: string;
+  role: Role;
+  added_at: string;
+}
+
+export interface SystemConfig {
+  MAX_RETRY: string;
+  AI_PROVIDER: string;
+  NGROK_URL: string;
+}
+
+export interface CandidateRow {
+  candidate: Candidate;
+  match: MatchResult | null;
+}
+
+export interface ApplicationInput {
+  full_name: string;
+  phone_number: string;
+  email: string;
+  applied_position: string;
+  self_reported_experience_range: string | null;
+  resume: File;
+}
+
+export type SubmitResult =
+  | { status: 'received'; candidate_id: string }
+  | { status: 'duplicate'; candidate_id: string }
+  | { status: 'error'; message: string };
+
+export type CandidatePatch = Partial<Pick<Candidate, 'full_name' | 'phone_number' | 'email' | 'self_reported_experience_range'>>;
