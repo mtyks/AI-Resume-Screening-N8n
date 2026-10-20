@@ -10,11 +10,13 @@ export interface Job {
   preferred_skills: string[];
   required_tools: string[];
   min_experience_years: number;
-  preferred_experience_type: string | null;
+  // คอลัมน์เดิม ไม่ได้ใช้คิดคะแนนและไม่แสดงในหน้าเว็บแล้ว (เก็บไว้เพื่อไม่ให้ข้อมูลเดิมหาย)
+  preferred_experience_type?: string | null;
   // น้ำหนักเก็บเป็นทศนิยม 0–1 เหมือนในฐานข้อมูล (UI แสดงเป็นเปอร์เซ็นต์)
   weight_musthave: number;
   weight_preferred: number;
   weight_tool: number;
+  // คอลัมน์เดิม: ประสบการณ์ไม่ถูกนำมาคิดคะแนนแล้ว จึงตั้งเป็น 0 เสมอ
   weight_experience: number;
   match_threshold: number;
   is_active: boolean;
@@ -45,8 +47,7 @@ export interface Candidate {
   email: string;
   applied_position: string;
   self_reported_experience_range: string | null;
-  skills: string[];
-  experience_years: number | null;
+  skills: string[]; // ทักษะที่ AI พบ (confidence ≥ 50) เขียนโดย workflow
   resume_file_url: string;
   received_at: string;
   application_status: string;
@@ -64,14 +65,10 @@ export interface EvaluationDetail {
   must_have_evaluation: CriterionEval[];
   preferred_evaluation: CriterionEval[];
   tool_evaluation: CriterionEval[];
-  experience_years?: number | null;
-  experience_relevance?: { confidence: number; evidence: string };
 }
 
-export type ScoreBasis =
-  | 'Full Assessment (Resume)'
-  | 'Partial Assessment (ใช้ช่วงปีจากฟอร์ม)'
-  | 'ค่ากลาง';
+// วิธีคิดคะแนนมีแบบเดียว (ทักษะ+เครื่องมือ จาก Resume) คอลัมน์ score_basis ใน DB จึงเป็นค่าคงที่
+export type ScoreBasis = 'Full Assessment (Resume)';
 
 export interface MatchResult {
   match_id: number;
@@ -100,10 +97,9 @@ export interface AuthorizedUser {
   added_at: string;
 }
 
+// ค่าตั้งระบบที่หน้าเว็บแก้ได้ (ตาราง system_config) — มีค่าเดียวคือ AI ที่ใช้
 export interface SystemConfig {
-  MAX_RETRY: string;
-  AI_PROVIDER: string;
-  NGROK_URL: string;
+  AI_PROVIDER: string; // 'gemini' = คีย์หลัก, 'gemini_backup' = คีย์สำรอง
 }
 
 export interface CandidateRow {

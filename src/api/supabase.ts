@@ -28,8 +28,6 @@ async function roleOf(email: string): Promise<Role | null> {
   return (data?.role as Role | undefined) ?? null;
 }
 
-const CONFIG_KEYS: (keyof SystemConfig)[] = ['MAX_RETRY', 'AI_PROVIDER', 'NGROK_URL'];
-
 export const supabaseApi: Api = {
   async listOpenPositions(): Promise<OpenPosition[]> {
     return ok(await sb().rpc('open_positions')) ?? [];
@@ -153,10 +151,9 @@ export const supabaseApi: Api = {
   },
 
   async getConfig(): Promise<SystemConfig> {
-    const rows = (ok(await sb().from('system_config').select('config_key,config_value')) ?? []) as { config_key: string; config_value: string }[];
-    const cfg = { MAX_RETRY: '', AI_PROVIDER: 'gemini', NGROK_URL: '' } as SystemConfig;
-    for (const r of rows) if ((CONFIG_KEYS as string[]).includes(r.config_key)) (cfg as unknown as Record<string, string>)[r.config_key] = r.config_value;
-    return cfg;
+    // อ่านเฉพาะคีย์ AI_PROVIDER (คีย์อื่นในตารางนี้ไม่มีส่วนไหนใช้)
+    const row = ok(await sb().from('system_config').select('config_value').eq('config_key', 'AI_PROVIDER').maybeSingle()) as { config_value: string } | null;
+    return { AI_PROVIDER: row?.config_value ?? 'gemini' };
   },
 
   async saveConfig(config) {

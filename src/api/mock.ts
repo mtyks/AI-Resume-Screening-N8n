@@ -57,12 +57,10 @@ interface Profile {
   name: string;
   pos: string;
   when: string;
-  years: number | null;
   form: string | null;
   m: number[];
   p: number[];
   t: number[];
-  er: number;
   score: number;
   basis: ScoreBasis;
 }
@@ -75,13 +73,13 @@ function seed(): Store {
   let mid = 1;
 
   const profiles: Profile[] = [
-    { id: 'C1968415639', name: 'ปิยะนุช วงศ์ดี', pos: 'Automation', when: '2026-10-19T14:20:00+07:00', years: 3, form: '3-5 ปี', m: [92, 88], p: [50], t: [96, 90], er: 85, score: 86.0, basis: 'Full Assessment (Resume)' },
-    { id: 'C1968402718', name: 'ธนกร ศรีสุข', pos: 'Automation', when: '2026-10-19T11:05:00+07:00', years: 1.5, form: null, m: [85, 80], p: [0], t: [90, 85], er: 70, score: 78.4, basis: 'Full Assessment (Resume)' },
-    { id: 'C1968377120', name: 'อรอุมา ทองดี', pos: 'Automation', when: '2026-10-18T16:48:00+07:00', years: 0.67, form: null, m: [75, 70], p: [0], t: [60, 85], er: 55, score: 72.3, basis: 'Full Assessment (Resume)' },
-    { id: 'C1968351904', name: 'กิตติพงษ์ แก้วมณี', pos: 'Automation', when: '2026-10-18T09:12:00+07:00', years: null, form: '1-3 ปี', m: [80, 60], p: [0], t: [85, 40], er: 40, score: 67.2, basis: 'Partial Assessment (ใช้ช่วงปีจากฟอร์ม)' },
-    { id: 'C1968320055', name: 'วรัญญา จันทร์เพ็ญ', pos: 'Automation', when: '2026-10-17T20:31:00+07:00', years: null, form: null, m: [55, 60], p: [0], t: [0, 70], er: 30, score: 54.0, basis: 'ค่ากลาง' },
-    { id: 'C1968298833', name: 'สุรเชษฐ์ พูนผล', pos: 'Automation', when: '2026-10-17T13:02:00+07:00', years: 2, form: '1-3 ปี', m: [20, 65], p: [0], t: [10, 70], er: 45, score: 38.5, basis: 'Full Assessment (Resume)' },
-    { id: 'C1968261490', name: 'ศุภชัย รักเรียน', pos: 'Backend', when: '2026-10-16T18:40:00+07:00', years: null, form: null, m: [80, 0], p: [0], t: [80, 0], er: 30, score: 41.0, basis: 'ค่ากลาง' }
+    { id: 'C1968415639', name: 'ปิยะนุช วงศ์ดี', pos: 'Automation', when: '2026-10-19T14:20:00+07:00', form: '3-5 ปี', m: [92, 88], p: [50], t: [96, 90], score: 86.0, basis: 'Full Assessment (Resume)' },
+    { id: 'C1968402718', name: 'ธนกร ศรีสุข', pos: 'Automation', when: '2026-10-19T11:05:00+07:00', form: null, m: [85, 80], p: [0], t: [90, 85], score: 78.4, basis: 'Full Assessment (Resume)' },
+    { id: 'C1968377120', name: 'อรอุมา ทองดี', pos: 'Automation', when: '2026-10-18T16:48:00+07:00', form: null, m: [75, 70], p: [0], t: [60, 85], score: 72.3, basis: 'Full Assessment (Resume)' },
+    { id: 'C1968351904', name: 'กิตติพงษ์ แก้วมณี', pos: 'Automation', when: '2026-10-18T09:12:00+07:00', form: '1-3 ปี', m: [80, 60], p: [0], t: [85, 40], score: 67.2, basis: 'Full Assessment (Resume)' },
+    { id: 'C1968320055', name: 'วรัญญา จันทร์เพ็ญ', pos: 'Automation', when: '2026-10-17T20:31:00+07:00', form: null, m: [55, 60], p: [0], t: [0, 70], score: 54.0, basis: 'Full Assessment (Resume)' },
+    { id: 'C1968298833', name: 'สุรเชษฐ์ พูนผล', pos: 'Automation', when: '2026-10-17T13:02:00+07:00', form: '1-3 ปี', m: [20, 65], p: [0], t: [10, 70], score: 38.5, basis: 'Full Assessment (Resume)' },
+    { id: 'C1968261490', name: 'ศุภชัย รักเรียน', pos: 'Backend', when: '2026-10-16T18:40:00+07:00', form: null, m: [80, 0], p: [0], t: [80, 0], score: 41.0, basis: 'Full Assessment (Resume)' }
   ];
 
   const log = (candidate_id: string | null, status: 'Success' | 'Error', message: string, timestamp: string) => ({
@@ -109,7 +107,6 @@ function seed(): Store {
       applied_position: p.pos,
       self_reported_experience_range: p.form,
       skills,
-      experience_years: p.years,
       resume_file_url: '#',
       received_at: p.when,
       application_status: 'In Review',
@@ -120,8 +117,6 @@ function seed(): Store {
       must_have_evaluation: must,
       preferred_evaluation: pref,
       tool_evaluation: tool,
-      experience_years: p.years,
-      experience_relevance: { confidence: p.er, evidence: p.er >= 50 ? 'ประสบการณ์ที่ระบุเกี่ยวข้องกับตำแหน่งนี้โดยตรง' : 'ประสบการณ์ที่ระบุไม่ใช่งานสายนี้โดยตรง' }
     };
     matches.push({
       match_id: mid++,
@@ -139,12 +134,12 @@ function seed(): Store {
   // รอประมวลผล / ล้มเหลว
   candidates.push({
     candidate_id: 'C1968285147', full_name: 'มนัสนันท์ รุ่งเรือง', phone_number: '08x-xxx-xxxx', email: 'c1968285147@example.com',
-    applied_position: 'Automation', self_reported_experience_range: null, skills: [], experience_years: null,
+    applied_position: 'Automation', self_reported_experience_range: null, skills: [],
     resume_file_url: '#', received_at: '2026-10-17T10:40:00+07:00', application_status: 'In Review', processing_status: 'pending', processing_error: null
   });
   candidates.push({
     candidate_id: 'C1968270062', full_name: 'ภาคิน เจริญสุข', phone_number: '08x-xxx-xxxx', email: 'c1968270062@example.com',
-    applied_position: 'Automation', self_reported_experience_range: null, skills: [], experience_years: null,
+    applied_position: 'Automation', self_reported_experience_range: null, skills: [],
     resume_file_url: '#', received_at: '2026-10-16T22:15:00+07:00', application_status: 'In Review', processing_status: 'failed',
     processing_error: 'Gemini API ไม่ตอบสนอง ลองครบ 5 ครั้งแล้ว'
   });
@@ -163,7 +158,7 @@ function seed(): Store {
       { email: 'admin@example.com', role: 'Admin', added_at: '2026-10-01T09:00:00+07:00' },
       { email: 'hr@example.com', role: 'HR', added_at: '2026-10-01T09:00:00+07:00' }
     ],
-    config: { MAX_RETRY: '3', AI_PROVIDER: 'gemini', NGROK_URL: '' },
+    config: { AI_PROVIDER: 'gemini' },
     nextMatchId: mid,
     nextLogId: logs.length + 1
   };
@@ -213,16 +208,13 @@ function avg(xs: number[]): number {
   return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
 }
 
-function evaluate(job: Job, c: Candidate): { match: Omit<MatchResult, 'match_id'>; years: number | null; skills: string[] } {
+function evaluate(job: Job, c: Candidate): { match: Omit<MatchResult, 'match_id'>; skills: string[] } {
   const h = hash(c.email + c.applied_position);
   const conf = (list: string[], salt: number) =>
     list.map((name, i) => [name, ((h >> ((i + salt) % 24)) % 100)] as [string, number]);
   const must = ev(conf(job.must_have_skills, 0).map(([n, v]) => [n, v < 25 ? 30 + (v % 20) : 55 + (v % 45)]));
   const pref = ev(conf(job.preferred_skills, 5));
   const tool = ev(conf(job.required_tools, 9).map(([n, v]) => [n, 40 + (v % 60)]));
-  const years: number | null = h % 3 === 0 ? null : (h % 7) / 2;
-  const er = 35 + (h % 60);
-
   const basis: ScoreBasis = 'Full Assessment (Resume)';
   const tw = job.weight_musthave + job.weight_preferred + job.weight_tool || 1;
   const score =
@@ -232,7 +224,6 @@ function evaluate(job: Job, c: Candidate): { match: Omit<MatchResult, 'match_id'
   const failed = must.find((x) => x.confidence < 50);
   const skills = [...must, ...pref, ...tool].filter((x) => x.confidence >= 50).map((x) => x.criterion);
   return {
-    years,
     skills,
     match: {
       candidate_id: c.candidate_id,
@@ -244,8 +235,6 @@ function evaluate(job: Job, c: Candidate): { match: Omit<MatchResult, 'match_id'
         must_have_evaluation: must,
         preferred_evaluation: pref,
         tool_evaluation: tool,
-        experience_years: years,
-        experience_relevance: { confidence: er, evidence: er >= 50 ? 'ประสบการณ์ที่ระบุเกี่ยวข้องกับตำแหน่งนี้' : 'ประสบการณ์ที่ระบุไม่ใช่งานสายนี้โดยตรง' }
       },
       evaluated_at: new Date().toISOString()
     }
@@ -266,7 +255,6 @@ function processCandidate(candidateId: string) {
   const r = evaluate(job, c);
   c.processing_status = 'processed';
   c.processing_error = null;
-  c.experience_years = r.years;
   c.skills = r.skills;
   store.matches = store.matches.filter((m) => m.candidate_id !== c.candidate_id);
   store.matches.push({ ...r.match, match_id: store.nextMatchId++ });
@@ -321,7 +309,6 @@ export const mockApi: Api = {
       applied_position: input.applied_position,
       self_reported_experience_range: input.self_reported_experience_range,
       skills: [],
-      experience_years: null,
       resume_file_url: URL.createObjectURL(input.resume),
       received_at: new Date().toISOString(),
       application_status: 'In Review',

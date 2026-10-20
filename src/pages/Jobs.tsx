@@ -11,7 +11,6 @@ interface Draft {
   pref: string[];
   tools: string[];
   min: string;
-  prefType: string;
   thr: number;
   wm: number;
   wp: number;
@@ -32,7 +31,7 @@ const toLocalInput = (iso?: string | null) => {
 };
 const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : null);
 
-const emptyDraft = (): Draft => ({ position_name: '', must: [], pref: [], tools: [], min: '0', prefType: '', thr: 70, wm: 50, wp: 20, wt: 30, we: 0, active: true, desc: '', openAt: '', closeAt: '' });
+const emptyDraft = (): Draft => ({ position_name: '', must: [], pref: [], tools: [], min: '0', thr: 70, wm: 50, wp: 20, wt: 30, we: 0, active: true, desc: '', openAt: '', closeAt: '' });
 
 // ประสบการณ์ไม่นำมาคิดคะแนนแล้ว: ปรับสัดส่วน 3 หมวดที่เหลือให้รวม 100%
 function normW(j: Job): { wm: number; wp: number; wt: number } {
@@ -49,7 +48,6 @@ const toDraft = (j: Job): Draft => ({
   pref: j.preferred_skills,
   tools: j.required_tools,
   min: String(j.min_experience_years),
-  prefType: j.preferred_experience_type ?? '',
   thr: j.match_threshold,
   ...normW(j),
   we: 0,
@@ -122,7 +120,6 @@ export default function Jobs() {
         preferred_skills: d.pref,
         required_tools: d.tools,
         min_experience_years: Number(d.min) || 0,
-        preferred_experience_type: d.prefType.trim() || null,
         weight_musthave: d.wm / 100,
         weight_preferred: d.wp / 100,
         weight_tool: d.wt / 100,
@@ -193,10 +190,6 @@ export default function Jobs() {
               <div className="field">
                 <label htmlFor="min">ประสบการณ์ขั้นต่ำ (ปี) <span className="muted" style={{ fontWeight: 400 }}>ใช้ติดธงให้ HR ไม่คิดคะแนน</span></label>
                 <input id="min" className="input" type="number" min="0" step="0.5" value={d.min} onChange={(e) => up('min', e.target.value)} />
-              </div>
-              <div className="field">
-                <label htmlFor="ptype">ประเภทประสบการณ์ที่ต้องการ <span className="muted" style={{ fontWeight: 400 }}>(ไม่บังคับ)</span></label>
-                <input id="ptype" className="input" placeholder="เช่น งานอัตโนมัติกระบวนการ" value={d.prefType} onChange={(e) => up('prefType', e.target.value)} />
               </div>
             </div>
 

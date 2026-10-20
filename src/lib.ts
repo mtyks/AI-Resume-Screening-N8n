@@ -71,16 +71,9 @@ export const KIND_BAR: Record<RowKind, string> = {
   failed: 'var(--muted)'
 };
 
-export const BASIS_LABEL: Record<ScoreBasis, string> = {
-  'Full Assessment (Resume)': 'ประเมินจาก Resume',
-  'Partial Assessment (ใช้ช่วงปีจากฟอร์ม)': 'ใช้ช่วงปีจากฟอร์ม',
-  'ค่ากลาง': 'ค่ากลาง'
-};
-
+/** คำอธิบายวิธีคิดคะแนน (มีแบบเดียว) แสดงในหน้ารายละเอียดผู้สมัคร */
 export const BASIS_NOTE: Record<ScoreBasis, string> = {
-  'Full Assessment (Resume)': 'คำนวณจากทักษะและเครื่องมือเท่านั้น ประสบการณ์ไม่นำมาคิดคะแนน',
-  'Partial Assessment (ใช้ช่วงปีจากฟอร์ม)': 'อ่านจำนวนปีจาก Resume ไม่ได้ จึงใช้ช่วงปีที่ผู้สมัครเลือกในฟอร์ม',
-  'ค่ากลาง': 'ไม่มีข้อมูลประสบการณ์ทั้งจาก Resume และฟอร์ม ใช้ค่ากลาง 50'
+  'Full Assessment (Resume)': 'คำนวณจากทักษะและเครื่องมือเท่านั้น ประสบการณ์ไม่นำมาคิดคะแนน'
 };
 
 export function rangeUpperYears(r: string | null): number | null {
