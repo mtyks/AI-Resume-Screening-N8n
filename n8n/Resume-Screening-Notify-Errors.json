@@ -1,0 +1,225 @@
+{
+  "name": "Resume-Screening-Notify-Errors",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "n1",
+      "name": "8.1 Every 5 Min",
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "url": "https://njnmhfuwwvzxlghcxlfw.supabase.co/rest/v1/candidates",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "candidate_id,full_name,applied_position,processing_status,processing_error,received_at"
+            },
+            {
+              "name": "error_notified_at",
+              "value": "is.null"
+            },
+            {
+              "name": "or",
+              "value": "=(processing_status.eq.failed,and(processing_status.eq.pending,received_at.lt.{{ new Date(Date.now() - 30 * 60 * 1000).toISOString() }}))"
+            },
+            {
+              "name": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n2",
+      "name": "8.2 Get Problem Candidates",
+      "position": [
+        224,
+        0
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3UV0hcoYwrtxR2TJ",
+          "name": "Supabase - Service Role (apikey)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://njnmhfuwwvzxlghcxlfw.supabase.co/rest/v1/authorized_users",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "email,role"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n3",
+      "name": "8.3 Get HR and Admin Emails",
+      "position": [
+        448,
+        0
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3UV0hcoYwrtxR2TJ",
+          "name": "Supabase - Service Role (apikey)"
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== โหนด 8.4 Build Email : สรุปผู้สมัครที่ประมวลผลไม่สำเร็จเป็นอีเมลเดียว =====\nconst esc = s => String(s ?? '').replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));\n// ผู้สมัครที่ยังไม่เคยแจ้ง (n8n จะไม่รันโหนดนี้ถ้า 8.2 ไม่มีผล = ไม่มีปัญหา ไม่ส่งอีเมล)\nconst cands = $('8.2 Get Problem Candidates').all().map(i => i.json);\nconst to = $input.all().map(i => i.json.email).filter(Boolean);\n// แปลสาเหตุจากป้ายในข้อความ error ของ workflow หลัก\nconst cause = (c) => {\n  const e = String(c.processing_error || '');\n  if (c.processing_status === 'pending') return 'ค้างสถานะ pending นานกว่า 30 นาที (ระบบประมวลผลอาจหยุดทำงานหรือ n8n หยุด)';\n  if (/Gemini Error/.test(e)) return 'AI (Gemini) ตอบกลับข้อผิดพลาด อาจโควตาหมดหรือคีย์ไม่ถูกต้อง — Admin สลับไปใช้คีย์สำรองได้ในหน้าตั้งค่าระบบ';\n  if (/Gemini Blocked|Gemini Empty/.test(e)) return 'AI ปฏิเสธหรือไม่ตอบเอกสารนี้';\n  if (/Parse Error/.test(e)) return 'AI ตอบในรูปแบบที่อ่านไม่ได้';\n  if (/No Active Job/.test(e)) return 'ไม่พบตำแหน่งที่เปิดรับตรงกับที่ผู้สมัครเลือก (อาจถูกปิดหรือเปลี่ยนชื่อ)';\n  if (/Score Error/.test(e)) return 'ตำแหน่งไม่มีเกณฑ์หรือน้ำหนักรวมเป็น 0';\n  if (/pdf|PDF|extract/i.test(e)) return 'อ่านไฟล์ PDF ไม่ได้ (ไฟล์เสียหรือมีรหัสผ่าน)';\n  return 'ข้อผิดพลาดในระบบ (ดูรายละเอียดด้านล่าง)';\n};\nconst rows = cands.map(c => `<tr><td>${esc(c.candidate_id)}</td><td>${esc(c.full_name)}</td><td>${esc(c.applied_position)}</td><td>${esc(c.processing_status)}</td><td>${esc(cause(c))}<br><small>${esc(c.processing_error || '')}</small></td></tr>`).join('');\nconst html = `<p>มีผู้สมัคร ${cands.length} รายที่ระบบ AI ประมวลผลไม่สำเร็จ เข้าหน้าเว็บแล้วกด \"สแกนซ้ำ\" หลังแก้สาเหตุ</p><table border=\"1\" cellpadding=\"6\" cellspacing=\"0\"><tr><th>รหัส</th><th>ชื่อ</th><th>ตำแหน่ง</th><th>สถานะ</th><th>สาเหตุ</th></tr>${rows}</table>`;\nreturn [{ json: { to: to.join(','), subject: `[Resume Screening] ผู้สมัครประมวลผลไม่สำเร็จ ${cands.length} ราย`, html, ids: cands.map(c => c.candidate_id) } }];"
+      },
+      "id": "n4",
+      "name": "8.4 Build Email",
+      "position": [
+        672,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "n5",
+      "name": "8.5 Send Email (Gmail)",
+      "position": [
+        880,
+        0
+      ],
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "url": "https://njnmhfuwwvzxlghcxlfw.supabase.co/rest/v1/candidates",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "candidate_id",
+              "value": "=in.({{ $('8.4 Build Email').item.json.ids.join(',') }})"
+            }
+          ]
+        },
+        "options": {},
+        "method": "PATCH",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { error_notified_at: new Date().toISOString() } }}"
+      },
+      "id": "n6",
+      "name": "8.6 Mark Notified",
+      "position": [
+        1104,
+        0
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3UV0hcoYwrtxR2TJ",
+          "name": "Supabase - Service Role (apikey)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "8.1 Every 5 Min": {
+      "main": [
+        [
+          {
+            "node": "8.2 Get Problem Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8.2 Get Problem Candidates": {
+      "main": [
+        [
+          {
+            "node": "8.3 Get HR and Admin Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8.3 Get HR and Admin Emails": {
+      "main": [
+        [
+          {
+            "node": "8.4 Build Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8.4 Build Email": {
+      "main": [
+        [
+          {
+            "node": "8.5 Send Email (Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8.5 Send Email (Gmail)": {
+      "main": [
+        [
+          {
+            "node": "8.6 Mark Notified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

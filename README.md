@@ -1,47 +1,74 @@
-# Resume Screening — Web (โหมดทดลอง ยังไม่เชื่อม Supabase)
+# Resume Screening
 
-เว็บ 7 หน้าจอสำหรับระบบคัดกรองใบสมัครงาน: ฟอร์มสมัครงาน, เข้าสู่ระบบ, Dashboard, รายละเอียดผู้สมัคร, ตั้งค่าตำแหน่งงาน, Log ระบบ, ผู้ใช้/ตั้งค่า
+ระบบคัดกรองใบสมัครงานอัตโนมัติ: ผู้สมัครส่งใบสมัครผ่านหน้าเว็บ → n8n ให้ AI (Gemini) อ่าน Resume และประเมินเทียบเกณฑ์ตำแหน่ง → HR/Admin ดูผลและจัดการผ่านเว็บ
 
-ตอนนี้ข้อมูลทั้งหมดเป็นข้อมูลตัวอย่างที่เก็บในเบราว์เซอร์ (localStorage) และการประเมิน AI เป็นการจำลอง **ไม่ใช่ Algorithm v4 จริง**
+```
+เว็บ (React + Vite, GitHub Pages)
+  ├─ ผู้สมัคร ── Edge Function submit-application ──► n8n webhook ──► Supabase (DB + Storage) + Gemini
+  └─ HR/Admin ── Supabase Auth (Google) + RLS ──────► Supabase
+```
 
-## วิธีรัน
+## โครงสร้างโปรเจกต์
+
+| โฟลเดอร์ | เนื้อหา |
+|---|---|
+| `src/` | เว็บ (หน้าสมัคร, Dashboard, ตั้งค่าตำแหน่ง, Log, Admin) |
+| `src/api/` | ชั้นข้อมูล: `supabase.ts` (ของจริง) และ `mock.ts` (โหมดทดลอง) |
+| `supabase/` | Edge Function `submit-application`, SQL migration, config |
+| `n8n/` | export ของ workflow (`Resume-Screening-Main`, `Resume-Screening-Notify-Errors`) |
+| `.github/workflows/` | deploy ขึ้น GitHub Pages อัตโนมัติ |
+
+## รันในเครื่อง
 
 ```bash
 npm install
-npm run dev        # เปิดที่ http://localhost:5173
-npm run build      # ได้ไฟล์เดียว dist/index.html เปิดได้ทั้งบน static host และดับเบิลคลิกเปิดตรง ๆ
+cp .env.example .env     # ใส่ค่า Supabase (ดูด้านล่าง)
+npm run dev              # http://localhost:5173
 ```
 
-## บัญชีทดลอง
+ไม่มี `.env` = โหมดทดลองด้วยข้อมูลจำลอง (ล็อกอินด้วยบัญชีตัวอย่าง `admin@example.com` / `hr@example.com`)
 
-| อีเมล | บทบาท | รหัสผ่าน |
+ตัวแปรใน `.env`: `VITE_SUPABASE_URL` และ `VITE_SUPABASE_ANON_KEY` (anon/publishable key เปิดเผยฝั่งเว็บได้ ความปลอดภัยอยู่ที่ RLS) **ห้ามใส่ service role key หรือ `x-api-key` ของ webhook ในเว็บ**
+
+## Deploy ขึ้น GitHub Pages
+
+1. push โปรเจกต์ขึ้น GitHub (branch `main`)
+2. Settings → Pages → Source = **GitHub Actions**
+3. Settings → Secrets and variables → Actions → แท็บ **Variables** เพิ่ม `VITE_SUPABASE_URL` และ `VITE_SUPABASE_ANON_KEY`
+4. push อีกครั้ง (หรือรัน workflow เอง) จะได้ลิงก์ `https://<user>.github.io/<repo>/`
+5. หน้าสมัครงานคือลิงก์หลัก เจ้าหน้าที่เข้าที่ `.../#/login`
+
+ใช้ HashRouter จึงไม่ต้องตั้ง rewrite ฝั่งเซิร์ฟเวอร์ และทำงานใต้ path ย่อยของ Pages ได้
+
+## ตั้งค่า Supabase
+
+1. รัน `supabase/migrations/*.sql` (SQL Editor) แล้วเพิ่มอีเมล Admin คนแรกใน `authorized_users`
+2. Authentication → Providers → **Google**: ใส่ Client ID/Secret
+3. Authentication → URL Configuration: ใส่ลิงก์ GitHub Pages (และ `http://localhost:5173`) ใน **Site URL / Redirect URLs**
+4. ฝั่ง Google Cloud: ใส่ Redirect URI ที่ Supabase แสดงในหน้า Google provider
+5. Edge Function: `supabase functions deploy submit-application` แล้วตั้ง secrets
+   - `N8N_WEBHOOK_URL` = `https://<โดเมน n8n>/webhook/resume-application`
+   - `N8N_WEBHOOK_KEY` = ค่าเดียวกับ credential "Resume Webhook - Shared Secret" ใน n8n (Header `x-api-key`)
+6. Storage: bucket `resumes` ตั้งเป็น **private**
+
+## ตั้งค่า n8n
+
+- import `n8n/*.json` แล้วผูก credentials: Supabase service role (Header Auth), Gemini หลัก/สำรอง (Header Auth), Webhook shared secret (Header Auth), Gmail (สำหรับ workflow แจ้งเตือน)
+- เปิด (Activate) ทั้ง 2 workflow
+- ตัวกวางานในโหนด 7.x ประมวลผลผู้สมัครที่ค้าง `pending` ทุก 5 นาที ปุ่ม "สแกนซ้ำ" ในเว็บแค่ตั้งสถานะกลับเป็น `pending`
+
+## กติกาคะแนน
+
+- คิดจากทักษะที่ต้องมี / ทักษะที่ควรมี / เครื่องมือ เท่านั้น (ปรับน้ำหนักให้รวม 100%) ประสบการณ์ไม่นำมาคิด
+- ทักษะที่ต้องมีข้อใดมั่นใจต่ำกว่า 50 = ไม่ผ่าน Gate (คะแนนถูกจำกัดที่ เกณฑ์ผ่าน − 10)
+- ประสบการณ์ที่ผู้สมัครเลือกในฟอร์มใช้เป็นธงให้ HR เท่านั้น ระบบไม่อ่านจำนวนปีจาก Resume
+
+## สิทธิ์
+
+| | HR | Admin |
 |---|---|---|
-| admin@example.com | Admin | อะไรก็ได้ที่ไม่ว่าง |
-| hr@example.com | HR | อะไรก็ได้ที่ไม่ว่าง |
+| ดูผู้สมัคร/ผลคะแนน, เปลี่ยนสถานะการสมัคร, สแกนซ้ำ | ✓ | ✓ |
+| ตั้งค่าตำแหน่ง (เกณฑ์ผ่าน, ทักษะ, ช่วงเปิดรับ) | ✓ | ✓ |
+| ดู Log, จัดการผู้ใช้, แก้ข้อมูลผู้สมัคร, สลับ AI | | ✓ |
 
-ปุ่ม Google ในโหมดทดลองจะเข้าสู่ระบบเป็น admin@example.com
-
-HR เห็น Dashboard และตำแหน่งงาน, Admin เห็น Log และหน้าผู้ใช้เพิ่มเติม (ตารางสิทธิ์นี้เป็นข้อเสนอ ยังไม่ยืนยัน)
-
-## กติกาคะแนน (ล่าสุด)
-
-- คะแนนคิดจากทักษะที่ต้องมี / ทักษะที่ควรมี / เครื่องมือ เท่านั้น (ปรับสัดส่วนให้รวม 100%) **ประสบการณ์ไม่นำมาคิดคะแนน**
-- ประสบการณ์ใช้เป็นธงให้ HR: เทียบช่วงที่ผู้สมัครแจ้งในฟอร์ม (บังคับกรอก) กับขั้นต่ำของตำแหน่ง ระบบไม่อ่านจำนวนปีจาก Resume
-
-## โครงสร้าง
-
-- `src/api/types.ts` ชนิดข้อมูล ชื่อฟิลด์ตรงกับคอลัมน์ในฐานข้อมูลจริง
-- `src/api/api.ts` interface `Api` ที่หน้าเว็บทุกหน้าเรียกใช้
-- `src/api/mock.ts` ตัวทำงานจำลอง (ข้อมูลตั้งต้น, หน่วงเวลาเครือข่าย, ประเมินคะแนนจำลอง)
-- `src/api/index.ts` จุดสลับเดียว: `export const api: Api = mockApi`
-
-## โหมดจริง (เชื่อม Supabase)
-
-คัดลอก `.env.example` เป็น `.env` (ใส่ URL และ anon/publishable key เท่านั้น ห้ามใส่ service role หรือ x-api-key) แล้ว `npm run build`
-ไม่มี `.env` = โหมดทดลองด้วยข้อมูลจำลอง
-
-- เข้าสู่ระบบด้วย Google (Supabase Auth) เฉพาะอีเมลใน `authorized_users` — ต้องเปิด Google provider ใน Supabase และเพิ่ม URL ของเว็บใน Redirect URLs
-- ต้องโฮสต์บน https (หรือ localhost) การเปิดไฟล์ตรง ๆ ใช้ล็อกอิน Google ไม่ได้
-- ใบสมัครส่งผ่าน Edge Function `submit-application` ซึ่งเก็บ secret `N8N_WEBHOOK_URL` และ `N8N_WEBHOOK_KEY` ไว้ฝั่งเซิร์ฟเวอร์ ถ้า n8n ไม่ตอบ ฟังก์ชันจะเก็บใบสมัครเป็น pending เอง
-- ปุ่ม "สแกนซ้ำ" เรียกฟังก์ชัน `request_rescan` (ตั้งสถานะกลับเป็น pending) แล้วตัวกวางานใน n8n ประมวลผลภายใน 5 นาที
-- สิทธิ์บังคับที่ฐานข้อมูลด้วย RLS: HR เห็น/แก้ตำแหน่งและผู้สมัคร (HR แก้ได้เฉพาะสถานะการสมัคร) · Admin เห็น Log จัดการผู้ใช้ แก้ข้อมูลผู้สมัคร และเลือก AI
+สิทธิ์บังคับที่ฐานข้อมูลด้วย RLS ไม่ใช่แค่ซ่อนเมนูในหน้าเว็บ
