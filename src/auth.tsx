@@ -17,6 +17,8 @@ interface AuthValue {
 }
 
 const KEY = 'rs-session-v1';
+/** ตั้งไว้ก่อนพาไปหน้า Google เพื่อให้รู้ว่าการโหลดหน้านี้คือการกลับมาจากล็อกอิน */
+export const OAUTH_FLAG = 'rs-oauth-return';
 const Ctx = createContext<AuthValue | null>(null);
 
 function readSession(): Session | null {
@@ -35,11 +37,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isReal) return;
-    api.restoreSession().then(setSession).catch(() => setSession(null)).finally(() => setReady(true));
+    api
+      .restoreSession()
+      .catch(() => null)
+      .then((s) => {
+        setSession(s);
+        // กลับมาจากหน้า Google: Supabase ส่งกลับมาที่ "/" (ไม่มี #/ ของ HashRouter) จึงต้องพาไปหน้าที่ถูกต้องเอง
+        let back = false;
+        try {
+          back = sessionStorage.getItem(OAUTH_FLAG) === '1';
+          sessionStorage.removeItem(OAUTH_FLAG);
+        } catch {
+          /* ignore */
+        }
+        if (back) {
+          window.history.replaceState(null, '', window.location.pathname + (s ? '#/dashboard' : '#/login')); // ตัด ?code=… ออกด้วย
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        }
+      })
+      .finally(() => setReady(true));
   }, []);
 
   const signInGoogle = useCallback(async () => {
-    await api.signInGoogle();
+    try {
+      sessionStorage.setItem(OAUTH_FLAG, '1');
+    } catch {
+      /* ignore */
+    }
+    try {
+      await api.signInGoogle();
+    } catch (e) {
+      try {
+        sessionStorage.removeItem(OAUTH_FLAG);
+      } catch {
+        /* ignore */
+      }
+      throw e;
+    }
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
