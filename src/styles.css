@@ -1,18 +1,18 @@
-/* ===== ระบบดีไซน์ ===== 
-   แบรนด์: น้ำเงินอุลตรามารีน + เหลืองไฮไลต์ (เหมือนปากกาเน้นข้อความบน Resume) บนพื้นเทาอมน้ำเงินอ่อน
-   สีเขียว/เหลืองส้ม/แดง ใช้บอกสถานะเท่านั้น */
+/* ===== ระบบดีไซน์ =====
+   แบรนด์: เขียวเข้ม (พื้นเมนู/ปุ่มหลัก) + ขาว + เขียวไลม์ (เหมือนปากกาเน้นข้อความบน Resume) บนพื้นเขียวอ่อนเกือบขาว
+   เขียว = ผ่าน, เหลืองส้ม = ต่ำกว่าเกณฑ์/คำเตือน, แดง = ไม่ผ่าน/ผิดพลาด (สีสถานะใช้บอกสถานะเท่านั้น) */
 :root {
-  --ink: #141a3c;
-  --muted: #5a6385;
-  --line: #e0e4f1;
-  --ground: #f3f5fb;
+  --ink: #10281f;
+  --muted: #54695f;
+  --line: #dce9e2;
+  --ground: #f3f8f5;
   --panel: #ffffff;
 
-  --brand: #3647d9;
-  --brand-dark: #2433b3;
-  --brand-soft: #e8ebff;
-  --hilite: #ffd23f;
-  --hilite-soft: #fff3c2;
+  --brand: #0b7d56;
+  --brand-dark: #08603f;
+  --brand-soft: #e1f4ea;
+  --hilite: #b7e35a;
+  --hilite-soft: #eaf8c8;
 
   /* สถานะ "ดี/ผ่าน" (เดิมชื่อ accent) */
   --accent: #0f9d6b;
@@ -20,10 +20,10 @@
   --accent-soft: #dcf5ea;
   --accent-ink: #0a6b49;
 
-  --nav: #131b4d;
-  --nav-2: #1b2566;
-  --nav-muted: #aab3e6;
-  --nav-accent: #ffd23f;
+  --nav: #0b3d2c;
+  --nav-2: #11523b;
+  --nav-muted: #a9d3bf;
+  --nav-accent: #b7e35a;
 
   --warn-bg: #fff1d1;
   --warn-ink: #7a4a00;
@@ -31,12 +31,12 @@
   --danger-bg: #fde4e8;
   --danger-ink: #9c2339;
   --danger-bar: #d6455d;
-  --info-bg: #e8ebff;
-  --info-ink: #2433b3;
-  --neutral-bg: #eceff8;
-  --neutral-ink: #38406a;
-  --input-border: #9ba3c7;
-  --focus: #8a96ff;
+  --info-bg: #e1f4ea;
+  --info-ink: #08603f;
+  --neutral-bg: #e8f0eb;
+  --neutral-ink: #34493f;
+  --input-border: #8fae9f;
+  --focus: #4cc49a;
 
   --r-lg: 20px;
   --r-md: 14px;
@@ -71,7 +71,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .input:hover, .select:hover { border-color: var(--input-border); }
 .input:focus, .select:focus { border-color: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); outline: none; }
 .input[aria-invalid='true'] { border-color: var(--danger-bar); background: #fffafb; }
-.input:disabled { background: #f0f2f9; color: var(--muted); }
+.input:disabled { background: #edf3ef; color: var(--muted); }
 textarea.input { padding: 12px 14px; }
 
 /* ---------- ปุ่ม ---------- */
@@ -86,7 +86,7 @@ textarea.input { padding: 12px 14px; }
 .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
 .btn.primary:hover { background: var(--brand-dark); border-color: var(--brand-dark); color: #fff; }
 .btn.small { height: 38px; padding: 0 14px; font-size: 14px; }
-.btn:disabled, .btn[aria-disabled='true'] { background: #e6e9f4; border-color: #e6e9f4; color: #6a7194; cursor: not-allowed; }
+.btn:disabled, .btn[aria-disabled='true'] { background: #e3ece7; border-color: #e3ece7; color: #6c8277; cursor: not-allowed; }
 
 /* ---------- ป้ายสถานะ ---------- */
 .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
@@ -132,7 +132,7 @@ textarea.input { padding: 12px 14px; }
 /* ลิงก์ชื่อขยายคลุมทั้งแถว: คลิกตรงไหนของแถวก็เปิดรายละเอียด (ปุ่มสแกนซ้ำอยู่เหนือชั้นนี้) */
 .row a.stretch::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
 .row .btn { position: relative; z-index: 1; }
-.row:hover { border-color: #c9cffa; box-shadow: 0 6px 20px -12px rgba(36, 51, 179, .35); }
+.row:hover { border-color: #b9ddc9; box-shadow: 0 6px 20px -12px rgba(11, 125, 86, .3); }
 .row a.name { font-family: var(--display); font-size: 16.5px; font-weight: 600; color: var(--ink); text-decoration: none; }
 .row a.name:hover { color: var(--brand); }
 .meter { position: relative; height: 8px; border-radius: 4px; background: var(--neutral-bg); margin-top: 6px; }
@@ -152,7 +152,7 @@ textarea.input { padding: 12px 14px; }
 .table-wrap .inner { min-width: 760px; }
 .trow { display: grid; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); align-items: center; font-size: 14.5px; }
 .trow:last-child { border-bottom: none; }
-.trow.head { background: #f8f9fd; font-size: 13px; font-weight: 600; color: var(--muted); padding: 12px 20px; }
+.trow.head { background: #f6faf7; font-size: 13px; font-weight: 600; color: var(--muted); padding: 12px 20px; }
 
 .empty { background: var(--panel); border: 1.5px dashed var(--input-border); border-radius: var(--r-md); padding: 40px 20px; text-align: center; color: var(--muted); }
 .alert { border-radius: var(--r-sm); padding: 12px 16px; font-size: 15px; line-height: 1.6; }
@@ -163,27 +163,32 @@ textarea.input { padding: 12px 14px; }
 .tag { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 8px 6px 14px; font-size: 14.5px; }
 .tag button { width: 24px; height: 24px; border: none; border-radius: 50%; cursor: pointer; background: rgba(0, 0, 0, 0.1); font-size: 15px; line-height: 1; }
 .tag.must { background: var(--brand-soft); color: var(--brand-dark); }
-.tag.pref { background: var(--hilite-soft); color: #6b4e00; }
-.tag.tool { background: var(--neutral-bg); color: #2d3560; }
+.tag.pref { background: var(--hilite-soft); color: #4d6a0a; }
+.tag.tool { background: var(--neutral-bg); color: #2f4a3d; }
 
 .split { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 
 /* ---------- หน้าสมัครงาน / เข้าสู่ระบบ ---------- */
 .hero { background: var(--nav); color: #fff; position: relative; overflow: hidden; }
-.hero::before { content: ''; position: absolute; inset: auto -120px -160px auto; width: 460px; height: 460px; border-radius: 50%; background: radial-gradient(closest-side, rgba(95, 110, 255, .55), transparent); pointer-events: none; }
+.hero::before { content: ''; position: absolute; inset: auto -120px -160px auto; width: 460px; height: 460px; border-radius: 50%; background: radial-gradient(closest-side, rgba(52, 199, 140, .45), transparent); pointer-events: none; }
 .hero > * { position: relative; }
 .hero h1 { font-size: clamp(30px, 3.4vw, 44px); font-weight: 700; line-height: 1.25; }
 .formcard { background: #fff; border-radius: var(--r-lg); box-shadow: var(--shadow-float); padding: 40px; width: 100%; max-width: 640px; }
 .section-h { display: flex; align-items: center; gap: 12px; font-family: var(--display); font-size: 18px; font-weight: 600; }
 .section-h span.n { width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; }
-.pos-grid { display: grid; gap: 12px; }
-.pos { display: block; position: relative; border: 1.5px solid var(--line); border-radius: var(--r-md); padding: 16px 18px 16px 52px; cursor: pointer; background: #fff; transition: border-color .15s, background .15s, box-shadow .15s; }
+/* รายการตำแหน่งแบบกะทัดรัด: 2 คอลัมน์ สูงจำกัดและเลื่อนในกล่อง เพื่อไม่ให้ฟอร์มยาวตามจำนวนตำแหน่ง */
+.pos-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-height: 332px; overflow-y: auto; padding: 5px; margin: -5px; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.pos { display: block; position: relative; border: 1.5px solid var(--line); border-radius: var(--r-md); padding: 12px 14px 12px 46px; cursor: pointer; background: #fff; transition: border-color .15s, background .15s, box-shadow .15s; }
 .pos:hover { border-color: var(--input-border); }
 .pos input { position: absolute; opacity: 0; }
-.pos .dot { position: absolute; left: 18px; top: 19px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--input-border); background: #fff; }
-.pos:has(input:checked) { border-color: var(--brand); background: #fafbff; box-shadow: 0 0 0 4px var(--brand-soft); }
+.pos .dot { position: absolute; left: 14px; top: 15px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--input-border); background: #fff; }
+.pos-name { display: block; font-family: var(--display); font-size: 16px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.pos-sub { display: block; font-size: 13px; color: var(--muted); margin-top: 1px; }
+.pos:has(input:checked) { border-color: var(--brand); background: #f6fbf8; box-shadow: 0 0 0 3px var(--brand-soft); }
 .pos:has(input:checked) .dot { border-color: var(--brand); background: radial-gradient(circle, var(--brand) 0 5px, #fff 6px); }
+.pos-detail { border-radius: var(--r-md); background: var(--brand-soft); padding: 16px 18px; }
+.pos-detail .chip { background: #fff; }
 .pos:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
 .seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .seg label { position: relative; display: flex; align-items: center; justify-content: center; text-align: center; min-height: 48px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: var(--r-sm); cursor: pointer; font-size: 15px; font-weight: 500; background: #fff; transition: all .15s; }
@@ -191,7 +196,7 @@ textarea.input { padding: 12px 14px; }
 .seg input { position: absolute; opacity: 0; }
 .seg label:has(input:checked) { background: var(--brand); border-color: var(--brand); color: #fff; }
 .seg label:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
-.drop { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; border: 2px dashed var(--input-border); border-radius: var(--r-md); background: #f8f9fd; padding: 26px 20px; cursor: pointer; transition: all .15s; }
+.drop { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; border: 2px dashed var(--input-border); border-radius: var(--r-md); background: #f6faf7; padding: 26px 20px; cursor: pointer; transition: all .15s; }
 .drop:hover, .drop.over { border-color: var(--brand); background: var(--brand-soft); }
 .drop.has { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
 .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
@@ -209,6 +214,7 @@ textarea.input { padding: 12px 14px; }
   .page { padding: 24px 16px 40px; }
 }
 @media (max-width: 640px) {
+  .pos-grid { grid-template-columns: minmax(0, 1fr); max-height: 300px; }
   .row { grid-template-columns: minmax(0, 1fr); }
   .grid2, .seg { grid-template-columns: minmax(0, 1fr); }
   .formcard { padding: 24px 18px; }

@@ -9,6 +9,9 @@ const EXP = ['ไม่มีประสบการณ์ (นักศึก�
 
 type Errors = Partial<Record<'full_name' | 'phone_number' | 'email' | 'applied_position' | 'exp' | 'resume' | 'consent', string>>;
 
+// จำนวนตำแหน่งที่เปิดรับตั้งแต่เท่านี้ขึ้นไปจึงแสดงช่องค้นหา
+const SEARCH_FROM = 6;
+
 const STEPS = ['เลือกตำแหน่งและกรอกข้อมูล แนบ Resume เป็นไฟล์ PDF', 'ระบบอ่าน Resume แล้วเทียบกับทักษะที่ตำแหน่งต้องการ', 'ฝ่ายบุคคลดูผลและติดต่อกลับทางอีเมลหรือเบอร์โทร'];
 
 export default function Apply() {
@@ -21,6 +24,7 @@ export default function Apply() {
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
+  const [posQ, setPosQ] = useState('');
 
   const set = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -67,6 +71,12 @@ export default function Apply() {
 
   const bad = (k: keyof Errors) => (errors[k] ? 'true' : undefined);
   const positions = jobs.data ?? [];
+  // กรองตามคำค้น (ชื่อตำแหน่ง ทักษะ หรือเครื่องมือ) ตำแหน่งที่เลือกไว้ยังคงอยู่แม้ถูกกรองออกจากรายการ
+  const needle = posQ.trim().toLowerCase();
+  const shown = needle
+    ? positions.filter((p) => [p.position_name, ...p.must_have_skills, ...p.preferred_skills, ...p.required_tools].some((t) => t.toLowerCase().includes(needle)))
+    : positions;
+  const chosen = positions.find((p) => p.position_name === form.applied_position) ?? null;
 
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '100vh' }}>
@@ -81,7 +91,7 @@ export default function Apply() {
           {STEPS.map((t, i) => (
             <li key={t} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <span style={{ flex: '0 0 30px', height: 30, borderRadius: '50%', background: 'var(--nav-2)', color: 'var(--hilite)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 14, fontFamily: 'var(--display)' }}>{i + 1}</span>
-              <span style={{ fontSize: 15.5, lineHeight: 1.6, paddingTop: 2, color: '#e3e7ff' }}>{t}</span>
+              <span style={{ fontSize: 15.5, lineHeight: 1.6, paddingTop: 2, color: '#dff2e8' }}>{t}</span>
             </li>
           ))}
         </ol>
@@ -107,27 +117,43 @@ export default function Apply() {
                 {!jobs.loading && !jobs.error && positions.length === 0 && (
                   <div className="empty">ตอนนี้ยังไม่มีตำแหน่งที่เปิดรับสมัคร ลองกลับมาดูใหม่ภายหลัง</div>
                 )}
-                <div className="pos-grid" role="radiogroup" aria-labelledby="s1">
-                  {positions.map((p) => (
+                {/* ช่องค้นหาตำแหน่ง: แสดงเมื่อมีตำแหน่งเปิดรับหลายตำแหน่ง เพื่อไม่ต้องเลื่อนหาในรายการยาว */}
+                {positions.length > SEARCH_FROM && (
+                  <div className="field">
+                    <label htmlFor="pos_q" className="sr-only">ค้นหาตำแหน่ง</label>
+                    <input id="pos_q" className="input" type="search" placeholder={`ค้นหาตำแหน่ง ทักษะ หรือเครื่องมือ (${positions.length} ตำแหน่ง)`} value={posQ} onChange={(e) => setPosQ(e.target.value)} />
+                  </div>
+                )}
+                {/* รายการแบบกะทัดรัด 2 คอลัมน์ สูงจำกัด เลื่อนภายในกล่อง ไม่ทำให้ทั้งหน้ายาวตามจำนวนตำแหน่ง */}
+                <div className="pos-grid" role="radiogroup" aria-labelledby="s1" tabIndex={-1}>
+                  {shown.map((p) => (
                     <label key={p.job_id} className="pos">
                       <input type="radio" name="position" value={p.position_name} checked={form.applied_position === p.position_name} onChange={set('applied_position')} />
                       <span className="dot" />
-                      <span style={{ display: 'block', fontFamily: 'var(--display)', fontSize: 17, fontWeight: 600 }}>{p.position_name}</span>
-                      {p.description && <span className="muted" style={{ display: 'block', fontSize: 14.5, marginTop: 2 }}>{p.description}</span>}
-                      <span style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-                        <span className="chip" style={{ background: 'var(--hilite-soft)', color: '#6b4e00' }}>{p.min_experience_years > 0 ? `ประสบการณ์ ${p.min_experience_years} ปีขึ้นไป` : 'รับนักศึกษาจบใหม่'}</span>
-                        {p.must_have_skills.map((s) => <span className="chip" key={s}>{s}</span>)}
-                        {p.required_tools.map((s) => <span className="chip" key={s} style={{ background: 'var(--brand-soft)', color: 'var(--brand-dark)' }}>{s}</span>)}
-                      </span>
-                      {form.applied_position === p.position_name && (p.preferred_skills.length > 0 || p.close_at) && (
-                        <span className="muted" style={{ display: 'block', fontSize: 13.5, marginTop: 10, lineHeight: 1.6 }}>
-                          {p.preferred_skills.length > 0 && <>ถ้ามีจะยิ่งดี: {p.preferred_skills.join(', ')}. </>}
-                          {p.close_at && <>ปิดรับสมัคร {new Date(p.close_at).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' })}</>}
-                        </span>
-                      )}
+                      <span className="pos-name">{p.position_name}</span>
+                      <span className="pos-sub">{p.min_experience_years > 0 ? `ประสบการณ์ ${p.min_experience_years} ปีขึ้นไป` : 'รับนักศึกษาจบใหม่'}</span>
                     </label>
                   ))}
+                  {shown.length === 0 && positions.length > 0 && <div className="muted" style={{ gridColumn: '1 / -1', padding: 12, fontSize: 14.5 }}>ไม่พบตำแหน่งที่ตรงกับ “{posQ}” ลองคำค้นอื่น หรือล้างช่องค้นหา</div>}
                 </div>
+
+                {/* รายละเอียดของตำแหน่งที่เลือก แสดงที่เดียว แทนการขยายทุกการ์ด */}
+                {chosen && (
+                  <div className="pos-detail" aria-live="polite">
+                    <div style={{ fontFamily: 'var(--display)', fontSize: 17, fontWeight: 600 }}>{chosen.position_name}</div>
+                    {chosen.description && <p className="muted" style={{ margin: '4px 0 0', fontSize: 14.5 }}>{chosen.description}</p>}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                      {chosen.must_have_skills.map((x) => <span className="chip" key={x}>{x}</span>)}
+                      {chosen.required_tools.map((x) => <span className="chip" key={x} style={{ background: 'var(--brand)', color: '#fff' }}>{x}</span>)}
+                    </div>
+                    {(chosen.preferred_skills.length > 0 || chosen.close_at) && (
+                      <p className="muted" style={{ margin: '10px 0 0', fontSize: 13.5, lineHeight: 1.6 }}>
+                        {chosen.preferred_skills.length > 0 && <>ถ้ามีจะยิ่งดี: {chosen.preferred_skills.join(', ')}. </>}
+                        {chosen.close_at && <>ปิดรับสมัคร {new Date(chosen.close_at).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' })}</>}
+                      </p>
+                    )}
+                  </div>
+                )}
                 {errors.applied_position && <span className="err field" role="alert" style={{ color: 'var(--danger-ink)', fontSize: 13.5, fontWeight: 500 }}>{errors.applied_position}</span>}
 
                 <div role="group" aria-labelledby="exp_label" className="field">

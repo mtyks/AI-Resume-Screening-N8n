@@ -7,8 +7,8 @@ export function Mark({ size = 30 }: { size?: number }) {
   return (
     <span className="mark" style={{ width: size, height: size, borderRadius: size * 0.3, background: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: `0 0 ${size}px` }}>
       <svg width={size * 0.62} height={size * 0.62} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <rect x="3" y="10" width="14" height="5" rx="1.5" fill="#ffd23f" />
-        <path d="M6 4h8M6 8h12M6 13h9M6 18h12" stroke="#131b4d" strokeWidth="2" strokeLinecap="round" />
+        <rect x="3" y="10" width="14" height="5" rx="1.5" fill="#b7e35a" />
+        <path d="M6 4h8M6 8h12M6 13h9M6 18h12" stroke="#0b3d2c" strokeWidth="2" strokeLinecap="round" />
       </svg>
     </span>
   );
@@ -89,28 +89,28 @@ export function ScoreRing({ value, color, size = 60, stroke = 6 }: { value: numb
 export function ResumeArt() {
   return (
     <div aria-hidden="true" style={{ position: 'relative', width: '100%', maxWidth: 400, margin: '0 auto' }}>
-      <div style={{ background: '#fff', color: '#141a3c', borderRadius: 18, padding: '26px 26px 30px', transform: 'rotate(-2.5deg)', boxShadow: '0 30px 60px -20px rgba(0,0,0,.5)' }}>
+      <div style={{ background: '#fff', color: '#10281f', borderRadius: 18, padding: '26px 26px 30px', transform: 'rotate(-2.5deg)', boxShadow: '0 30px 60px -20px rgba(0,0,0,.5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ width: 44, height: 44, borderRadius: '50%', background: '#e8ebff' }} />
+          <span style={{ width: 44, height: 44, borderRadius: '50%', background: '#e1f4ea' }} />
           <div style={{ flex: 1 }}>
-            <div style={{ height: 11, width: '55%', background: '#141a3c', borderRadius: 6 }} />
-            <div style={{ height: 8, width: '35%', background: '#c9cfe9', borderRadius: 6, marginTop: 8 }} />
+            <div style={{ height: 11, width: '55%', background: '#10281f', borderRadius: 6 }} />
+            <div style={{ height: 8, width: '35%', background: '#cfe3d8', borderRadius: 6, marginTop: 8 }} />
           </div>
         </div>
         <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 11 }}>
           {[['100%', false], ['86%', true], ['94%', false], ['72%', true], ['90%', false], ['60%', true]].map(([w, hl], i) => (
             <div key={i} style={{ position: 'relative', height: 9, width: w as string }}>
-              {hl && <span style={{ position: 'absolute', inset: '-4px -6px', background: '#ffd23f', borderRadius: 4, opacity: .9 }} />}
-              <span style={{ position: 'absolute', inset: 0, background: '#aeb6d9', borderRadius: 5 }} />
+              {hl && <span style={{ position: 'absolute', inset: '-4px -6px', background: '#b7e35a', borderRadius: 4, opacity: .9 }} />}
+              <span style={{ position: 'absolute', inset: 0, background: '#b4cfc0', borderRadius: 5 }} />
             </div>
           ))}
         </div>
       </div>
-      <div style={{ position: 'absolute', right: -6, bottom: -26, background: '#fff', borderRadius: 20, padding: '12px 18px 12px 12px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 20px 40px -14px rgba(0,0,0,.55)', color: '#141a3c' }}>
+      <div style={{ position: 'absolute', right: -6, bottom: -26, background: '#fff', borderRadius: 20, padding: '12px 18px 12px 12px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 20px 40px -14px rgba(0,0,0,.55)', color: '#10281f' }}>
         <ScoreRing value={86} color="#0f9d6b" size={58} />
         <div style={{ lineHeight: 1.3 }}>
           <div style={{ fontFamily: 'var(--display)', fontWeight: 600, fontSize: 15 }}>ตรงกับตำแหน่ง</div>
-          <div style={{ fontSize: 12.5, color: '#5a6385' }}>ทักษะหลักครบ</div>
+          <div style={{ fontSize: 12.5, color: '#54695f' }}>ทักษะหลักครบ</div>
         </div>
       </div>
     </div>

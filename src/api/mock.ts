@@ -29,7 +29,7 @@ interface Store {
   nextLogId: number;
 }
 
-const STORAGE_KEY = 'rs-mock-v1';
+const STORAGE_KEY = 'rs-mock-v2';
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const ev = (items: [string, number][]): CriterionEval[] =>
@@ -47,7 +47,21 @@ function seedJobs(): Job[] {
   return [
     { ...base, job_id: 'JOB-AUTO-001', position_name: 'Automation', must_have_skills: ['ใช้ n8n สร้าง Workflow ได้', 'เขียน JavaScript ได้'], preferred_skills: ['เคยใช้ Docker'], required_tools: ['n8n', 'JavaScript'], min_experience_years: 1 },
     { ...base, job_id: 'JOB-FE-001', position_name: 'Frontend', must_have_skills: ['เขียน HTML/CSS ได้', 'ใช้ JavaScript ได้'], preferred_skills: ['เคยใช้ React'], required_tools: ['HTML', 'CSS', 'JavaScript'], min_experience_years: 0 },
-    { ...base, job_id: 'JOB-BE-001', position_name: 'Backend', must_have_skills: ['เขียน SQL ได้', 'เข้าใจ API/REST'], preferred_skills: ['เคยใช้ Node.js'], required_tools: ['SQL', 'REST API'], min_experience_years: 0 }
+    { ...base, job_id: 'JOB-BE-001', position_name: 'Backend', must_have_skills: ['เขียน SQL ได้', 'เข้าใจ API/REST'], preferred_skills: ['เคยใช้ Node.js'], required_tools: ['SQL', 'REST API'], min_experience_years: 0 },
+    // ตำแหน่งตัวอย่างเพิ่มเติม (ให้โหมดทดลองเห็นหน้าสมัครเมื่อมีตำแหน่งเปิดรับเยอะ)
+    ...([
+      ['JOB-UX-001', 'UX/UI Designer', 0, ['ออกแบบ Wireframe และ Prototype ได้', 'เข้าใจหลัก UX'], ['เคยทดสอบกับผู้ใช้จริง'], ['Figma', 'Adobe XD']],
+      ['JOB-DA-001', 'Data Analyst', 1, ['เขียน SQL ได้', 'สรุปข้อค้นพบจากข้อมูลได้'], ['เขียน Python ได้'], ['Power BI', 'Excel']],
+      ['JOB-QA-001', 'QA Tester', 0, ['เขียน Test Case ได้', 'รายงาน Bug ได้ชัดเจน'], ['เขียน Automated Test ได้'], ['Postman', 'Jira']],
+      ['JOB-DEVOPS-001', 'DevOps Engineer', 2, ['ใช้ Linux ได้', 'ตั้งค่า CI/CD ได้'], ['เคยใช้ Kubernetes'], ['Docker', 'GitHub Actions']],
+      ['JOB-MOB-001', 'Mobile Developer', 1, ['พัฒนาแอปมือถือได้', 'เรียกใช้ REST API ได้'], ['เคยปล่อยแอปขึ้น Store'], ['Flutter', 'Firebase']],
+      ['JOB-FS-001', 'Full-Stack Developer', 2, ['เขียน JavaScript/TypeScript ได้', 'ออกแบบฐานข้อมูลได้'], ['เคย deploy ขึ้น Cloud'], ['React', 'Node.js', 'PostgreSQL']],
+      ['JOB-BA-001', 'Business Analyst', 1, ['เก็บและเขียน Requirement ได้', 'วาด Flowchart ได้'], ['เขียน User Story'], ['Jira', 'Draw.io']],
+      ['JOB-SEC-001', 'Cybersecurity Analyst', 2, ['เข้าใจ OWASP Top 10', 'วิเคราะห์ Log ได้'], ['เคยทำ Penetration Test'], ['Wireshark', 'Nmap']],
+      ['JOB-RPA-001', 'RPA Developer', 0, ['พัฒนา Workflow ด้วย UiPath ได้', 'วิเคราะห์กระบวนการได้'], ['เคยใช้ Orchestrator'], ['UiPath', 'Excel']],
+      ['JOB-IT-001', 'IT Support', 0, ['แก้ปัญหา Windows ได้', 'เข้าใจพื้นฐานเครือข่าย'], ['เคยใช้ Active Directory'], ['Windows', 'Microsoft 365']]
+    ] as [string, string, number, string[], string[], string[]][]).map(([job_id, position_name, min_experience_years, must_have_skills, preferred_skills, required_tools]): Job =>
+      ({ ...base, job_id, position_name, must_have_skills, preferred_skills, required_tools, min_experience_years }))
   ];
 }
 

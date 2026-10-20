@@ -95,9 +95,9 @@ export default function Dashboard() {
                 <span style={{ fontSize: 15, fontWeight: 600 }}>การกระจายคะแนน</span>
                 <span className="muted" style={{ fontSize: 13 }}>เส้นประ = เกณฑ์ผ่าน {job.match_threshold}</span>
               </div>
-              <div role="img" aria-label={`จำนวนผู้สมัครแยกตามช่วงคะแนน ${view.buckets.join(', ')}`} style={{ position: 'relative', height: 120, display: 'flex', alignItems: 'flex-end', gap: 6, borderBottom: '1px solid #cfcbbe' }}>
+              <div role="img" aria-label={`จำนวนผู้สมัครแยกตามช่วงคะแนน ${view.buckets.join(', ')}`} style={{ position: 'relative', height: 120, display: 'flex', alignItems: 'flex-end', gap: 6, borderBottom: '1px solid #cfd9d3' }}>
                 {view.buckets.map((n, i) => (
-                  <div key={i} title={`${i * 10}–${(i + 1) * 10}: ${n} คน`} style={{ flex: 1, minWidth: 0, height: n ? 18 + n * 28 : 3, background: i * 10 >= job.match_threshold ? 'var(--accent)' : '#b9c0e0', borderRadius: '4px 4px 0 0' }} />
+                  <div key={i} title={`${i * 10}–${(i + 1) * 10}: ${n} คน`} style={{ flex: 1, minWidth: 0, height: n ? 18 + n * 28 : 3, background: i * 10 >= job.match_threshold ? 'var(--accent)' : '#bcd6c8', borderRadius: '4px 4px 0 0' }} />
                 ))}
                 <div style={{ position: 'absolute', left: `${job.match_threshold}%`, top: 0, bottom: 0, borderLeft: '2px dashed var(--ink)' }} />
               </div>
