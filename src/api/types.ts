@@ -10,14 +10,10 @@ export interface Job {
   preferred_skills: string[];
   required_tools: string[];
   min_experience_years: number;
-  // คอลัมน์เดิม ไม่ได้ใช้คิดคะแนนและไม่แสดงในหน้าเว็บแล้ว (เก็บไว้เพื่อไม่ให้ข้อมูลเดิมหาย)
-  preferred_experience_type?: string | null;
   // น้ำหนักเก็บเป็นทศนิยม 0–1 เหมือนในฐานข้อมูล (UI แสดงเป็นเปอร์เซ็นต์)
   weight_musthave: number;
   weight_preferred: number;
   weight_tool: number;
-  // คอลัมน์เดิม: ประสบการณ์ไม่ถูกนำมาคิดคะแนนแล้ว จึงตั้งเป็น 0 เสมอ
-  weight_experience: number;
   match_threshold: number;
   is_active: boolean;
   // ช่วงเปิดรับสมัคร (ว่าง = ไม่จำกัด) และคำอธิบายตำแหน่งที่ผู้สมัครเห็น
@@ -67,15 +63,11 @@ export interface EvaluationDetail {
   tool_evaluation: CriterionEval[];
 }
 
-// วิธีคิดคะแนนมีแบบเดียว (ทักษะ+เครื่องมือ จาก Resume) คอลัมน์ score_basis ใน DB จึงเป็นค่าคงที่
-export type ScoreBasis = 'Full Assessment (Resume)';
-
 export interface MatchResult {
   match_id: number;
   candidate_id: string;
   job_id: string;
   match_score: number;
-  score_basis: ScoreBasis;
   gate_status: string; // 'Pass' หรือ 'Failed: ขาด <ทักษะ>'
   evaluation_detail: EvaluationDetail;
   evaluated_at: string;

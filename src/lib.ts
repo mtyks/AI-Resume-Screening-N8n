@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Candidate, CandidateRow, Job, ScoreBasis } from './api';
+import type { Candidate, CandidateRow, Job } from './api';
 
 /** โหลดข้อมูลแบบ async พร้อมสถานะ loading/error และ reload() */
 export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
@@ -72,9 +72,7 @@ export const KIND_BAR: Record<RowKind, string> = {
 };
 
 /** คำอธิบายวิธีคิดคะแนน (มีแบบเดียว) แสดงในหน้ารายละเอียดผู้สมัคร */
-export const BASIS_NOTE: Record<ScoreBasis, string> = {
-  'Full Assessment (Resume)': 'คำนวณจากทักษะและเครื่องมือเท่านั้น ประสบการณ์ไม่นำมาคิดคะแนน'
-};
+export const SCORE_NOTE = 'คำนวณจากทักษะและเครื่องมือเท่านั้น ประสบการณ์ไม่นำมาคิดคะแนน';
 
 export function rangeUpperYears(r: string | null): number | null {
   if (!r) return null;
@@ -112,3 +110,13 @@ export function kindNote(kind: RowKind, row: CandidateRow, job: Job): string {
     default: return 'กำลังอยู่ในคิว';
   }
 }
+
+/** ป้ายสถานะการสมัครที่ HR เห็น (ค่าที่เก็บใน DB ยังเป็น In Review / Hired / Rejected ตาม check constraint) */
+export const STATUS_LABEL: Record<string, string> = {
+  'In Review': 'กำลังพิจารณา',
+  Hired: 'รับเข้าทำงาน',
+  Rejected: 'ไม่รับ'
+};
+
+/** จำนวนทักษะที่แสดงในแถวผู้สมัคร ส่วนที่เหลือรวมเป็น "+N" (ดูครบในหน้ารายละเอียด) */
+export const MAX_SKILL_CHIPS = 3;

@@ -15,7 +15,6 @@ interface Draft {
   wm: number;
   wp: number;
   wt: number;
-  we: number;
   active: boolean;
   desc: string;
   openAt: string;  // รูปแบบ datetime-local (เวลาท้องถิ่น) ว่าง = เปิดทันที
@@ -31,7 +30,7 @@ const toLocalInput = (iso?: string | null) => {
 };
 const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : null);
 
-const emptyDraft = (): Draft => ({ position_name: '', must: [], pref: [], tools: [], min: '0', thr: 70, wm: 50, wp: 20, wt: 30, we: 0, active: true, desc: '', openAt: '', closeAt: '' });
+const emptyDraft = (): Draft => ({ position_name: '', must: [], pref: [], tools: [], min: '0', thr: 70, wm: 50, wp: 20, wt: 30, active: true, desc: '', openAt: '', closeAt: '' });
 
 // ประสบการณ์ไม่นำมาคิดคะแนนแล้ว: ปรับสัดส่วน 3 หมวดที่เหลือให้รวม 100%
 function normW(j: Job): { wm: number; wp: number; wt: number } {
@@ -50,7 +49,6 @@ const toDraft = (j: Job): Draft => ({
   min: String(j.min_experience_years),
   thr: j.match_threshold,
   ...normW(j),
-  we: 0,
   active: j.is_active,
   desc: j.description ?? '',
   openAt: toLocalInput(j.open_at),
@@ -123,7 +121,6 @@ export default function Jobs() {
         weight_musthave: d.wm / 100,
         weight_preferred: d.wp / 100,
         weight_tool: d.wt / 100,
-        weight_experience: 0,
         match_threshold: d.thr,
         is_active: d.active,
         description: d.desc.trim() || null,
@@ -188,8 +185,9 @@ export default function Jobs() {
 
             <div className="grid2">
               <div className="field">
-                <label htmlFor="min">ประสบการณ์ขั้นต่ำ (ปี) <span className="muted" style={{ fontWeight: 400 }}>ใช้ติดธงให้ HR ไม่คิดคะแนน</span></label>
+                <label htmlFor="min">ประสบการณ์ขั้นต่ำ (ปี)</label>
                 <input id="min" className="input" type="number" min="0" step="0.5" value={d.min} onChange={(e) => up('min', e.target.value)} />
+                <span className="hint">ใช้ติดธงให้ HR เห็นเท่านั้น ไม่นำมาคิดคะแนน</span>
               </div>
             </div>
 

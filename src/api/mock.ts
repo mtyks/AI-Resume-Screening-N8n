@@ -8,7 +8,6 @@ import type {
   Job,
   MatchResult,
   Role,
-  ScoreBasis,
   SubmitResult,
   SystemConfig,
   SystemLog
@@ -44,7 +43,7 @@ const ev = (items: [string, number][]): CriterionEval[] =>
   }));
 
 function seedJobs(): Job[] {
-  const base = { preferred_experience_type: null, weight_musthave: 0.35, weight_preferred: 0.15, weight_tool: 0.2, weight_experience: 0.3, match_threshold: 70, is_active: true };
+  const base = { weight_musthave: 0.5, weight_preferred: 0.2, weight_tool: 0.3, match_threshold: 70, is_active: true };
   return [
     { ...base, job_id: 'JOB-AUTO-001', position_name: 'Automation', must_have_skills: ['ใช้ n8n สร้าง Workflow ได้', 'เขียน JavaScript ได้'], preferred_skills: ['เคยใช้ Docker'], required_tools: ['n8n', 'JavaScript'], min_experience_years: 1 },
     { ...base, job_id: 'JOB-FE-001', position_name: 'Frontend', must_have_skills: ['เขียน HTML/CSS ได้', 'ใช้ JavaScript ได้'], preferred_skills: ['เคยใช้ React'], required_tools: ['HTML', 'CSS', 'JavaScript'], min_experience_years: 0 },
@@ -62,7 +61,6 @@ interface Profile {
   p: number[];
   t: number[];
   score: number;
-  basis: ScoreBasis;
 }
 
 function seed(): Store {
@@ -73,13 +71,13 @@ function seed(): Store {
   let mid = 1;
 
   const profiles: Profile[] = [
-    { id: 'C1968415639', name: 'ปิยะนุช วงศ์ดี', pos: 'Automation', when: '2026-10-19T14:20:00+07:00', form: '3-5 ปี', m: [92, 88], p: [50], t: [96, 90], score: 86.0, basis: 'Full Assessment (Resume)' },
-    { id: 'C1968402718', name: 'ธนกร ศรีสุข', pos: 'Automation', when: '2026-10-19T11:05:00+07:00', form: null, m: [85, 80], p: [0], t: [90, 85], score: 78.4, basis: 'Full Assessment (Resume)' },
-    { id: 'C1968377120', name: 'อรอุมา ทองดี', pos: 'Automation', when: '2026-10-18T16:48:00+07:00', form: null, m: [75, 70], p: [0], t: [60, 85], score: 72.3, basis: 'Full Assessment (Resume)' },
-    { id: 'C1968351904', name: 'กิตติพงษ์ แก้วมณี', pos: 'Automation', when: '2026-10-18T09:12:00+07:00', form: '1-3 ปี', m: [80, 60], p: [0], t: [85, 40], score: 67.2, basis: 'Full Assessment (Resume)' },
-    { id: 'C1968320055', name: 'วรัญญา จันทร์เพ็ญ', pos: 'Automation', when: '2026-10-17T20:31:00+07:00', form: null, m: [55, 60], p: [0], t: [0, 70], score: 54.0, basis: 'Full Assessment (Resume)' },
-    { id: 'C1968298833', name: 'สุรเชษฐ์ พูนผล', pos: 'Automation', when: '2026-10-17T13:02:00+07:00', form: '1-3 ปี', m: [20, 65], p: [0], t: [10, 70], score: 38.5, basis: 'Full Assessment (Resume)' },
-    { id: 'C1968261490', name: 'ศุภชัย รักเรียน', pos: 'Backend', when: '2026-10-16T18:40:00+07:00', form: null, m: [80, 0], p: [0], t: [80, 0], score: 41.0, basis: 'Full Assessment (Resume)' }
+    { id: 'C1968415639', name: 'ปิยะนุช วงศ์ดี', pos: 'Automation', when: '2026-10-19T14:20:00+07:00', form: '3-5 ปี', m: [92, 88], p: [50], t: [96, 90], score: 86.0 },
+    { id: 'C1968402718', name: 'ธนกร ศรีสุข', pos: 'Automation', when: '2026-10-19T11:05:00+07:00', form: null, m: [85, 80], p: [0], t: [90, 85], score: 78.4 },
+    { id: 'C1968377120', name: 'อรอุมา ทองดี', pos: 'Automation', when: '2026-10-18T16:48:00+07:00', form: null, m: [75, 70], p: [0], t: [60, 85], score: 72.3 },
+    { id: 'C1968351904', name: 'กิตติพงษ์ แก้วมณี', pos: 'Automation', when: '2026-10-18T09:12:00+07:00', form: '1-3 ปี', m: [80, 60], p: [0], t: [85, 40], score: 67.2 },
+    { id: 'C1968320055', name: 'วรัญญา จันทร์เพ็ญ', pos: 'Automation', when: '2026-10-17T20:31:00+07:00', form: null, m: [55, 60], p: [0], t: [0, 70], score: 54.0 },
+    { id: 'C1968298833', name: 'สุรเชษฐ์ พูนผล', pos: 'Automation', when: '2026-10-17T13:02:00+07:00', form: '1-3 ปี', m: [20, 65], p: [0], t: [10, 70], score: 38.5 },
+    { id: 'C1968261490', name: 'ศุภชัย รักเรียน', pos: 'Backend', when: '2026-10-16T18:40:00+07:00', form: null, m: [80, 0], p: [0], t: [80, 0], score: 41.0 }
   ];
 
   const log = (candidate_id: string | null, status: 'Success' | 'Error', message: string, timestamp: string) => ({
@@ -123,7 +121,6 @@ function seed(): Store {
       candidate_id: p.id,
       job_id: job.job_id,
       match_score: p.score,
-      score_basis: p.basis,
       gate_status: failed ? `Failed: ขาด ${failed.criterion}` : 'Pass',
       evaluation_detail: detail,
       evaluated_at: p.when
@@ -215,7 +212,6 @@ function evaluate(job: Job, c: Candidate): { match: Omit<MatchResult, 'match_id'
   const must = ev(conf(job.must_have_skills, 0).map(([n, v]) => [n, v < 25 ? 30 + (v % 20) : 55 + (v % 45)]));
   const pref = ev(conf(job.preferred_skills, 5));
   const tool = ev(conf(job.required_tools, 9).map(([n, v]) => [n, 40 + (v % 60)]));
-  const basis: ScoreBasis = 'Full Assessment (Resume)';
   const tw = job.weight_musthave + job.weight_preferred + job.weight_tool || 1;
   const score =
     (job.weight_musthave * avg(must.map((x) => x.confidence)) +
@@ -229,7 +225,6 @@ function evaluate(job: Job, c: Candidate): { match: Omit<MatchResult, 'match_id'
       candidate_id: c.candidate_id,
       job_id: job.job_id,
       match_score: Math.round(score * 10) / 10,
-      score_basis: basis,
       gate_status: failed ? `Failed: ขาด ${failed.criterion}` : 'Pass',
       evaluation_detail: {
         must_have_evaluation: must,
@@ -347,7 +342,7 @@ export const mockApi: Api = {
 
   async saveJob(input) {
     await sleep(NET);
-    const sum = input.weight_musthave + input.weight_preferred + input.weight_tool + input.weight_experience;
+    const sum = input.weight_musthave + input.weight_preferred + input.weight_tool;
     if (Math.abs(sum - 1) > 0.0001) throw new Error('น้ำหนักรวมต้องเท่ากับ 100%');
     if (input.job_id) {
       const i = store.jobs.findIndex((j) => j.job_id === input.job_id);

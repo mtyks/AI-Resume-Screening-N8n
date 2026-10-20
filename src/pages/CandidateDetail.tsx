@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import type { Candidate, CriterionEval } from '../api';
-import { BASIS_NOTE, KIND_LABEL, expFlag, fmtShort, fmtStamp, rowKind, useAsync } from '../lib';
+import { SCORE_NOTE, STATUS_LABEL, KIND_LABEL, expFlag, fmtShort, fmtStamp, rowKind, useAsync } from '../lib';
 import { ErrorBox, Loading } from '../ui';
 
 // ต้องตรงกับ check constraint ของคอลัมน์ application_status ในฐานข้อมูล
@@ -147,7 +147,7 @@ export default function CandidateDetail() {
             <label htmlFor="st" className="muted" style={{ fontSize: 13.5 }}>สถานะการพิจารณา</label>
             <select id="st" className="select" style={{ height: 44 }} value={c.application_status}
               onChange={async (e) => { await api.setApplicationStatus(c.candidate_id, e.target.value); setSaved(true); data.reload(); }}>
-              {[...new Set([c.application_status, ...STATUSES])].map((s) => <option key={s}>{s}</option>)}
+              {[...new Set([c.application_status, ...STATUSES])].map((s) => <option key={s} value={s}>{STATUS_LABEL[s] ?? s}</option>)}
             </select>
             {saved && <span className="hint" role="status">บันทึกสถานะแล้ว</span>}
           </div>
@@ -178,7 +178,7 @@ export default function CandidateDetail() {
                   </div>
                 ))}
                 <div style={{ borderTop: '1px solid var(--line)', paddingTop: 14, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, fontSize: 14.5 }}>
-                  <span><span className="muted">วิธีคิดคะแนน: </span>{BASIS_NOTE[m.score_basis]}</span>
+                  <span><span className="muted">วิธีคิดคะแนน: </span>{SCORE_NOTE}</span>
                   <span style={{ fontWeight: 600 }}>Gate: {m.gate_status === 'Pass' ? 'ผ่าน' : m.gate_status.replace('Failed: ', 'ไม่ผ่าน — ')}</span>
                 </div>
               </section>

@@ -84,7 +84,7 @@ export const supabaseApi: Api = {
   },
 
   async saveJob(job): Promise<Job> {
-    const sum = job.weight_musthave + job.weight_preferred + job.weight_tool + job.weight_experience;
+    const sum = job.weight_musthave + job.weight_preferred + job.weight_tool;
     if (Math.abs(sum - 1) > 0.0001) throw new Error('น้ำหนักรวมต้องเท่ากับ 100%');
     const row = { ...job, job_id: job.job_id ?? `JOB-${Date.now().toString(36).toUpperCase()}` };
     return ok(await sb().from('job_requirements').upsert(row).select().single()) as Job;

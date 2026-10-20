@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, isReal } from '../api';
-import { KIND_BAR, KIND_LABEL, expFlag, expText, fmtShort, kindNote, rowKind, useAsync, type RowKind } from '../lib';
+import { KIND_BAR, KIND_LABEL, MAX_SKILL_CHIPS, expFlag, expText, fmtShort, kindNote, rowKind, useAsync, type RowKind } from '../lib';
 import { ErrorBox, Loading, PageHead, ScoreRing } from '../ui';
 
 const TABS: ['all' | RowKind, string][] = [
@@ -13,6 +13,10 @@ export default function Dashboard() {
   const [jobId, setJobId] = useState('');
   const [tab, setTab] = useState<'all' | RowKind>('all');
   const [q, setQ] = useState('');
+  // เรียงตามคะแนนสูงสุดก่อน (คนที่ยังไม่มีคะแนนไว้ท้าย) หรือตามเวลาที่สมัคร
+  const [sort, setSort] = useState<'score' | 'recent'>('score');
+  // ข้อความแจ้งผลการกดสแกนซ้ำ (แทน alert ที่ขัดจังหวะการใช้งาน)
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     if (!jobId && jobs.data?.length) setJobId(jobs.data[0].job_id);
@@ -32,14 +36,17 @@ export default function Dashboard() {
     const text = q.trim().toLowerCase();
     const shown = withKind
       .filter((x) => tab === 'all' || x.k === tab)
-      .filter((x) => !text || x.r.candidate.full_name.toLowerCase().includes(text) || x.r.candidate.candidate_id.toLowerCase().includes(text));
+      .filter((x) => !text || x.r.candidate.full_name.toLowerCase().includes(text) || x.r.candidate.candidate_id.toLowerCase().includes(text))
+      .sort((a, b) => sort === 'recent'
+        ? b.r.candidate.received_at.localeCompare(a.r.candidate.received_at)
+        : (b.r.match?.match_score ?? -1) - (a.r.match?.match_score ?? -1));
     const buckets = Array.from({ length: 10 }, (_, i) => scored.filter((s) => (i === 9 ? s >= 90 : s >= i * 10 && s < (i + 1) * 10)).length);
     return { withKind, count, avg, shown, buckets };
-  }, [rows.data, job, tab, q]);
+  }, [rows.data, job, tab, q, sort]);
 
   return (
     <main className="page">
-      <PageHead title="ผลการจับคู่ผู้สมัคร" sub="เรียงจากผู้สมัครล่าสุด · คะแนนเต็ม 100">
+      <PageHead title="ผลการจับคู่ผู้สมัคร" sub={`${sort === 'score' ? 'เรียงจากคะแนนสูงสุด' : 'เรียงจากผู้สมัครล่าสุด'} · คะแนนเต็ม 100`}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
           <div className="field">
             <label htmlFor="jobsel" className="muted" style={{ fontSize: 13.5 }}>ตำแหน่ง</label>
@@ -50,6 +57,13 @@ export default function Dashboard() {
           <div className="field">
             <label htmlFor="q" className="muted" style={{ fontSize: 13.5 }}>ค้นหา</label>
             <input id="q" className="input" type="search" style={{ height: 44, width: 220 }} placeholder="ชื่อ หรือรหัสผู้สมัคร" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="sortsel" className="muted" style={{ fontSize: 13.5 }}>เรียงตาม</label>
+            <select id="sortsel" className="select" style={{ height: 44 }} value={sort} onChange={(e) => setSort(e.target.value as 'score' | 'recent')}>
+              <option value="score">คะแนนสูงสุด</option>
+              <option value="recent">สมัครล่าสุด</option>
+            </select>
           </div>
         </div>
       </PageHead>
@@ -91,6 +105,14 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {view.count('pending') + view.count('failed') > 0 && tab !== 'failed' && tab !== 'pending' && (
+            <div className="alert warn" role="status" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+              <span>มี {view.count('pending') + view.count('failed')} รายที่ยังประมวลผลไม่เสร็จ แก้สาเหตุแล้วกด “สแกนซ้ำ” ได้ที่แถวของผู้สมัคร</span>
+              <button type="button" className="btn small" style={{ marginLeft: 'auto' }} onClick={() => setTab(view.count('failed') > 0 ? 'failed' : 'pending')}>ดูเฉพาะรายการเหล่านี้</button>
+            </div>
+          )}
+          {notice && <div role="status" className={`alert ${notice.ok ? 'ok' : 'err'}`}>{notice.text}</div>}
+
           <div role="group" aria-label="กรองตามสถานะ" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {TABS.map(([k, label]) => (
               <button key={k} type="button" className="tab" aria-pressed={tab === k} onClick={() => setTab(k)}>{label} <span style={{ opacity: 0.85 }}>({view.count(k)})</span></button>
@@ -106,13 +128,16 @@ export default function Dashboard() {
               return (
                 <div className="row" key={c.candidate_id}>
                   <div style={{ flex: '1 1 220px', minWidth: 0 }}>
-                    <Link className="name" to={`/candidate/${c.candidate_id}`}>{c.full_name}</Link>
+                    <Link className="name stretch" to={`/candidate/${c.candidate_id}`}>{c.full_name}</Link>
                     <div className="muted" style={{ fontSize: 13, marginTop: 3 }}><span className="mono">{c.candidate_id}</span> · สมัคร {fmtShort(c.received_at)}</div>
                   </div>
                   <div style={{ flex: '1.3 1 260px', minWidth: 0 }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{c.skills.map((s) => <span className="chip" key={s}>{s}</span>)}</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {c.skills.slice(0, MAX_SKILL_CHIPS).map((s) => <span className="chip" key={s}>{s}</span>)}
+                      {c.skills.length > MAX_SKILL_CHIPS && <span className="chip" title={c.skills.slice(MAX_SKILL_CHIPS).join(', ')}>+{c.skills.length - MAX_SKILL_CHIPS}</span>}
+                    </div>
                     <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>{expText(r)}</div>
-                    {(() => { const f = expFlag(c, job); return f.level === 'low' || f.level === 'unknown' ? <span className={`pill ${f.level === 'low' ? 'below' : 'info'}`} style={{ fontSize: 12.5, padding: '3px 10px', marginTop: 6 }}>{f.label}</span> : null; })()}
+                    {(() => { const f = expFlag(c, job); return f.level === 'low' ? <span className="pill below" style={{ fontSize: 12.5, padding: '3px 10px', marginTop: 6 }}>{f.label}</span> : null; })()}
                   </div>
                   <div style={{ flex: '0 0 190px' }}>
                     {m && c.processing_status === 'processed' ? (
@@ -131,7 +156,12 @@ export default function Dashboard() {
                   </div>
                   <div style={{ flex: '0 0 130px', display: 'flex', justifyContent: 'flex-end' }}>
                     {k === 'failed' || k === 'pending'
-                      ? <button className="btn small" type="button" onClick={async () => { try { await api.retryCandidate(c.candidate_id); } catch (e) { window.alert(e instanceof Error ? e.message : 'สั่งสแกนซ้ำไม่สำเร็จ'); } rows.reload(); }}>สแกนซ้ำ</button>
+                      ? <button className="btn small" type="button" onClick={async () => {
+                        setNotice(null);
+                        try { await api.retryCandidate(c.candidate_id); setNotice({ ok: true, text: `ส่ง ${c.full_name} เข้าคิวสแกนใหม่แล้ว ระบบจะประมวลผลภายในไม่กี่นาที` }); }
+                        catch (e) { setNotice({ ok: false, text: e instanceof Error ? e.message : 'สั่งสแกนซ้ำไม่สำเร็จ' }); }
+                        rows.reload();
+                      }}>สแกนซ้ำ</button>
                       : <Link to={`/candidate/${c.candidate_id}`} style={{ fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>ดูรายละเอียด →</Link>}
                   </div>
                 </div>
