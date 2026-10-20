@@ -37,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isReal) return;
+    // Supabase จะลบ ?code=… ออกจาก URL หลังแลก session จึงต้องจดไว้ก่อนเรียก restoreSession
+    const cameWithCode = /[?&](code|error)=/.test(window.location.search);
     api
       .restoreSession()
       .catch(() => null)
@@ -45,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // กลับมาจากหน้า Google: Supabase ส่งกลับมาที่ "/" (ไม่มี #/ ของ HashRouter) จึงต้องพาไปหน้าที่ถูกต้องเอง
         let back = false;
         try {
-          back = sessionStorage.getItem(OAUTH_FLAG) === '1';
+          back = cameWithCode || sessionStorage.getItem(OAUTH_FLAG) === '1';
           sessionStorage.removeItem(OAUTH_FLAG);
         } catch {
           /* ignore */
