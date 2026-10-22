@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Candidate, CandidateRow, Job } from './api';
+import type { ApplicantItem, Candidate, CandidateRow, Job } from './api';
 
 /** โหลดข้อมูลแบบ async พร้อมสถานะ loading/error และ reload() */
 export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
@@ -120,3 +120,34 @@ export const STATUS_LABEL: Record<string, string> = {
 
 /** จำนวนทักษะที่แสดงในแถวผู้สมัคร ส่วนที่เหลือรวมเป็น "+N" (ดูครบในหน้ารายละเอียด) */
 export const MAX_SKILL_CHIPS = 3;
+
+/** หมายเหตุสั้น ๆ ใต้ป้ายสถานะในรายการผู้สมัคร */
+export function itemNote(it: ApplicantItem, threshold: number): string {
+  switch (it.kind) {
+    case 'pass': return 'ส่งต่อให้ HR พิจารณา';
+    case 'below': return it.score !== null ? `ขาด ${(threshold - it.score).toFixed(1)} คะแนนถึงเกณฑ์` : '';
+    case 'gate': return it.gate ? it.gate.replace('Failed: ', '') : '';
+    case 'failed': return it.candidate.processing_error ?? '';
+    default: return 'กำลังอยู่ในคิว';
+  }
+}
+
+/** ป้องกัน CSV/Excel Injection: เซลล์ที่ขึ้นต้นด้วย = + - @ จะถูกตีความเป็นสูตร จึงนำหน้าด้วยเครื่องหมาย ' */
+export function csvCell(v: unknown): string {
+  let t = v === null || v === undefined ? '' : String(v);
+  if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+  return `"${t.replace(/"/g, '""')}"`;
+}
+
+/** สร้างไฟล์ CSV (UTF-8 มี BOM เพื่อให้ Excel อ่านภาษาไทยถูก) แล้วสั่งดาวน์โหลด */
+export function downloadCsv(filename: string, rows: unknown[][]): void {
+  const body = rows.map((r) => r.map(csvCell).join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob(['\ufeff' + body], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}

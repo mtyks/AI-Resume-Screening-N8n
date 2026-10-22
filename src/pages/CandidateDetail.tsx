@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import type { Candidate, CriterionEval } from '../api';
 import { SCORE_NOTE, STATUS_LABEL, KIND_LABEL, expFlag, fmtShort, fmtStamp, rowKind, useAsync } from '../lib';
+import { useStats } from '../stats';
 import { ErrorBox, Loading } from '../ui';
 
 // ต้องตรงกับ check constraint ของคอลัมน์ application_status ในฐานข้อมูล
@@ -81,6 +82,33 @@ function EditCandidate({ c, onSaved }: { c: Candidate; onSaved: () => void }) {
   );
 }
 
+/** โน้ตของ HR ต่อผู้สมัคร (ข้อความเดียว แก้ไขทับได้) */
+function NoteCard({ c, onSaved }: { c: Candidate; onSaved: () => void }) {
+  const [text, setText] = useState(c.hr_note ?? '');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const dirty = text.trim() !== (c.hr_note ?? '');
+  async function save() {
+    setBusy(true);
+    setMsg(null);
+    try { await api.saveNote(c.candidate_id, text); setMsg({ ok: true, text: 'บันทึกโน้ตแล้ว' }); onSaved(); }
+    catch (e) { setMsg({ ok: false, text: e instanceof Error ? e.message : 'บันทึกโน้ตไม่สำเร็จ' }); }
+    finally { setBusy(false); }
+  }
+  return (
+    <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <h2 style={{ fontSize: 19, fontWeight: 700 }}>โน้ตของ HR</h2>
+      <textarea className="input" rows={4} maxLength={2000} style={{ height: 'auto', padding: '12px 14px', resize: 'vertical' }} placeholder="เช่น นัดสัมภาษณ์วันพฤหัส, ติดต่อกลับแล้ว, เงินเดือนที่คาดหวัง…" value={text} onChange={(e) => setText(e.target.value)} aria-label="โน้ตของ HR" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <button type="button" className="btn primary small" disabled={!dirty || busy} onClick={() => void save()}>{busy ? 'กำลังบันทึก…' : 'บันทึกโน้ต'}</button>
+        {c.hr_note_at && <span className="muted" style={{ fontSize: 12.5 }}>แก้ล่าสุด {fmtShort(c.hr_note_at)}{c.hr_note_by ? ` โดย ${c.hr_note_by}` : ''}</span>}
+      </div>
+      {msg && <div role="status" className={`alert ${msg.ok ? 'ok' : 'err'}`}>{msg.text}</div>}
+      <span className="muted" style={{ fontSize: 12.5 }}>โน้ตนี้เห็นได้เฉพาะ HR/Admin ผู้สมัครไม่เห็น</span>
+    </section>
+  );
+}
+
 export default function CandidateDetail() {
   const { id = '' } = useParams();
   const data = useAsync(() => api.getCandidate(id), [id]);
@@ -88,12 +116,28 @@ export default function CandidateDetail() {
   const [opening, setOpening] = useState(false);
   const [resumeErr, setResumeErr] = useState<string | null>(null);
   const { session } = useAuth();
+  const { reload: reloadStats } = useStats();
+  const nav = useNavigate();
+  const location = useLocation();
+  const [sp] = useSearchParams();
+
+  // เปิดดูผู้สมัครคนไหน = ทำเครื่องหมาย "อ่านแล้ว" ให้อัตโนมัติ (ยอดยังไม่อ่านที่เมนูและการแจ้งเตือนลดลงตามไป)
+  const loadedId = data.data?.candidate.candidate_id;
+  const wasRead = data.data?.candidate.is_read;
+  useEffect(() => {
+    if (!loadedId || wasRead) return;
+    api.setRead([loadedId], true).then(reloadStats).catch(() => { /* ไม่ทำให้หน้าเสียถ้าบันทึกไม่สำเร็จ */ });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadedId]);
 
   if (data.loading && !data.data) return <main className="page"><Loading /></main>;
   if (data.error) return <main className="page"><ErrorBox message={data.error} /></main>;
-  if (!data.data) return <main className="page"><div className="empty">ไม่พบผู้สมัครรหัส {id}</div><Link to="/dashboard">← กลับไปผลการจับคู่</Link></main>;
+  if (!data.data) return <main className="page"><div className="empty">ไม่พบผู้สมัครรหัส {id}</div><Link to="/positions">← กลับไปเลือกตำแหน่ง</Link></main>;
 
   const { candidate: c, match: m, job, logs } = data.data;
+  // กลับไปรายชื่อเดิม (คงตัวกรองและหน้าที่เปิดอยู่) ถ้าเข้ามาจากหน้ารายชื่อ ไม่เช่นนั้นไปหน้าของตำแหน่งนี้
+  const backTo = `/positions/${sp.get('job') ?? job?.job_id ?? ''}`;
+  const goBack = () => (location.key !== 'default' ? nav(-1) : nav(backTo));
 
   async function openResume() {
     setOpening(true);
@@ -123,13 +167,18 @@ export default function CandidateDetail() {
 
   return (
     <main className="page">
-      <Link to="/dashboard" style={{ fontSize: 14.5, fontWeight: 600, textDecoration: 'none' }}>← กลับไปผลการจับคู่</Link>
+      <a href={`#${backTo}`} onClick={(e) => { e.preventDefault(); goBack(); }} style={{ fontSize: 14.5, fontWeight: 600, textDecoration: 'none' }}>← กลับไปรายชื่อผู้สมัคร</a>
 
       <section className="card" style={{ padding: 28, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '20px 36px' }}>
         <div style={{ flex: '1 1 300px', minWidth: 0 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
             <h1 style={{ fontSize: 28, fontWeight: 700 }}>{c.full_name}</h1>
             <span className={`pill ${kind}`}>{KIND_LABEL[kind]}</span>
+            <button type="button" className="starbtn" style={{ width: 40, height: 40 }} aria-pressed={c.starred} title={c.starred ? 'เอาออกจาก Shortlist' : 'ติดดาว (Shortlist)'}
+              onClick={async () => { await api.setStarred(c.candidate_id, !c.starred); data.reload(); reloadStats(); }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill={c.starred ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8 6.6 19.7l1.1-6.1L3.2 9.4l6.1-.8z" /></svg>
+              <span className="sr-only">{c.starred ? 'ติดดาวอยู่' : 'ยังไม่ติดดาว'}</span>
+            </button>
           </div>
           <div className="muted" style={{ marginTop: 8, fontSize: 14.5, display: 'flex', flexWrap: 'wrap', gap: '6px 20px' }}>
             <span className="mono">{c.candidate_id}</span><span>สมัครตำแหน่ง {c.applied_position}</span><span>ส่งเมื่อ {fmtShort(c.received_at)}</span>
@@ -207,6 +256,8 @@ export default function CandidateDetail() {
             {resumeErr && <span className="err" role="alert">{resumeErr}</span>}
             <span className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>ไฟล์เก็บแบบส่วนตัว ลิงก์ที่เปิดจะหมดอายุใน 10 นาที</span>
           </section>
+
+          <NoteCard key={c.candidate_id} c={c} onSaved={() => data.reload()} />
 
           {session?.role === 'Admin' && <EditCandidate key={c.candidate_id + c.email + c.full_name} c={c} onSaved={() => data.reload()} />}
 

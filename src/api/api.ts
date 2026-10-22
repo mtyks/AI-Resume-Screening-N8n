@@ -1,7 +1,6 @@
 import type {
   ApplicationInput,
   AuthorizedUser,
-  CandidateRow,
   Job,
   MatchResult,
   Role,
@@ -10,7 +9,10 @@ import type {
   SystemLog,
   Candidate,
   OpenPosition,
-  CandidatePatch
+  CandidatePatch,
+  ApplicantQuery,
+  ApplicantPage,
+  PositionStat
 } from './types';
 
 /**
@@ -35,7 +37,18 @@ export interface Api {
   saveJob(job: Omit<Job, 'job_id'> & { job_id?: string }): Promise<Job>;
 
   // ผู้สมัครและผลจับคู่
-  listCandidateRows(jobId: string): Promise<CandidateRow[]>;
+  /** สถิติรายตำแหน่ง (จำนวน ยังไม่อ่าน ผ่านเกณฑ์ ฯลฯ) */
+  positionStats(): Promise<PositionStat[]>;
+  /** รายชื่อผู้สมัครของตำแหน่งหนึ่ง กรอง/เรียง/แบ่งหน้าที่ฝั่งเซิร์ฟเวอร์ */
+  listApplicants(query: ApplicantQuery): Promise<ApplicantPage>;
+  /** ทำเครื่องหมายอ่านแล้ว/ยังไม่อ่าน (หลายคนพร้อมกันได้) */
+  setRead(candidateIds: string[], read: boolean): Promise<void>;
+  setStarred(candidateId: string, starred: boolean): Promise<void>;
+  saveNote(candidateId: string, note: string): Promise<void>;
+  /** จำนวนผู้สมัครที่ปุ่ม "ลบที่อ่านแล้ว" จะลบ (อ่านแล้ว ไม่ติดดาว ไม่ใช่ Hired) */
+  countDeletableRead(jobId: string): Promise<number>;
+  /** ลบผู้สมัครที่อ่านแล้วของตำแหน่งนี้ถาวร (รวมไฟล์ Resume) คืนจำนวนที่ลบ */
+  deleteReadCandidates(jobId: string): Promise<number>;
   getCandidate(candidateId: string): Promise<{ candidate: Candidate; match: MatchResult | null; job: Job | null; logs: SystemLog[] } | null>;
   setApplicationStatus(candidateId: string, status: string): Promise<void>;
   retryCandidate(candidateId: string): Promise<void>;

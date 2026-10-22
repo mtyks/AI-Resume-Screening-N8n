@@ -49,6 +49,12 @@ export interface Candidate {
   application_status: string;
   processing_status: ProcessingStatus;
   processing_error: string | null;
+  // งานของ HR (ตั้งโดยหน้าเว็บ ไม่ใช่ workflow)
+  is_read: boolean; // HR เปิดดูแล้วหรือยัง
+  starred: boolean; // ติดดาว/shortlist
+  hr_note: string | null;
+  hr_note_at?: string | null;
+  hr_note_by?: string | null;
 }
 
 export interface CriterionEval {
@@ -114,3 +120,53 @@ export type SubmitResult =
   | { status: 'error'; message: string };
 
 export type CandidatePatch = Partial<Pick<Candidate, 'full_name' | 'phone_number' | 'email' | 'self_reported_experience_range'>>;
+
+/** ผลสรุปของผู้สมัครหนึ่งคนในรายการ (ผลจับคู่ล่าสุดของตำแหน่งนั้น) */
+export type ApplicantKind = 'pass' | 'below' | 'gate' | 'pending' | 'failed';
+
+export interface ApplicantItem {
+  candidate: Candidate;
+  score: number | null;
+  gate: string | null;
+  kind: ApplicantKind;
+}
+
+export type ApplicantSort = 'score' | 'recent' | 'name' | 'unread';
+
+/** เงื่อนไขค้นหารายชื่อผู้สมัครของตำแหน่งหนึ่ง (กรอง เรียง แบ่งหน้าที่ฝั่งฐานข้อมูล) */
+export interface ApplicantQuery {
+  jobId: string;
+  q?: string;
+  kind?: 'all' | ApplicantKind;
+  appStatus?: string; // '' = ทุกสถานะ
+  unread?: boolean;
+  starred?: boolean;
+  sort?: ApplicantSort;
+  page: number; // เริ่มที่ 1
+  pageSize: number;
+}
+
+export interface ApplicantPage {
+  items: ApplicantItem[];
+  total: number;
+}
+
+/** สถิติต่อตำแหน่ง (ใช้ในหน้าภาพรวม หน้าเลือกตำแหน่ง และแจ้งเตือน) */
+export interface PositionStat {
+  job_id: string;
+  position_name: string;
+  is_active: boolean;
+  match_threshold: number;
+  close_at: string | null;
+  total: number;
+  unread: number;
+  starred: number;
+  pending: number;
+  failed: number;
+  passed: number;
+  below: number;
+  gate: number;
+  hired: number;
+  avg_score: number | null;
+  buckets: number[]; // 10 ช่วงคะแนน 0-9, 10-19, … 90-100
+}

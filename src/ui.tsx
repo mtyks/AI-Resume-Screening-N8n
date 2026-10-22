@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth';
+import { StatsProvider, useStats } from './stats';
 
 /** โลโก้: กระดาษ Resume กับแถบไฮไลต์สีเหลือง */
 export function Mark({ size = 30 }: { size?: number }) {
@@ -18,11 +19,21 @@ const ic = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 
 const IconDash = () => <svg {...ic}><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></svg>;
 const IconJobs = () => <svg {...ic}><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18" /></svg>;
 const IconLog = () => <svg {...ic}><path d="M4 6h16M4 12h16M4 18h10" /></svg>;
+const IconPeople = () => <svg {...ic}><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.6-3.6 3.3-5.5 7-5.5s6.4 1.9 7 5.5" /></svg>;
 const IconUsers = () => <svg {...ic}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.4 3.2-5.5 6.5-5.5s5.9 2.1 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.2 2.5 3.5 5.2" /></svg>;
 
-/** โครงหน้าฝั่ง HR / Admin: เมนูด้านข้าง เมนูที่เห็นขึ้นกับบทบาท */
+/** โครงหน้าฝั่ง HR / Admin: เมนูด้านข้าง เมนูที่เห็นขึ้นกับบทบาท (สถิติโหลดครั้งเดียวที่นี่แล้วแชร์ให้ทุกหน้า) */
 export function HrLayout() {
+  return (
+    <StatsProvider>
+      <HrShell />
+    </StatsProvider>
+  );
+}
+
+function HrShell() {
   const { session, signOut } = useAuth();
+  const { unreadTotal } = useStats();
   const nav = useNavigate();
   const isAdmin = session?.role === 'Admin';
   const link = ({ isActive }: { isActive: boolean }) => (isActive ? 'active' : undefined);
@@ -31,7 +42,8 @@ export function HrLayout() {
       <aside className="side">
         <span className="brand"><Mark size={34} /> Resume Screening</span>
         <nav className="nav" aria-label="เมนูหลัก">
-          <NavLink to="/dashboard" className={link}><IconDash /> ผลการจับคู่</NavLink>
+          <NavLink to="/dashboard" className={link}><IconDash /> ภาพรวม</NavLink>
+          <NavLink to="/positions" className={link}><IconPeople /> ผู้สมัคร{unreadTotal > 0 && <span className="navbadge" aria-label={`ยังไม่อ่าน ${unreadTotal} คน`}>{unreadTotal > 99 ? '99+' : unreadTotal}</span>}</NavLink>
           <NavLink to="/jobs" className={link}><IconJobs /> ตำแหน่งงาน</NavLink>
           {isAdmin && <NavLink to="/logs" className={link}><IconLog /> สถานะระบบ</NavLink>}
           {isAdmin && <NavLink to="/admin" className={link}><IconUsers /> ผู้ใช้และตั้งค่า</NavLink>}

@@ -8,6 +8,9 @@ import CandidateDetail from './pages/CandidateDetail';
 import Jobs from './pages/Jobs';
 import Logs from './pages/Logs';
 import Admin from './pages/Admin';
+import Positions from './pages/Positions';
+import PositionApplicants from './pages/PositionApplicants';
+import Compare from './pages/Compare';
 
 export default function App() {
   return (
@@ -19,6 +22,9 @@ export default function App() {
       {/* ฝั่ง HR / Admin */}
       <Route element={<RequireAuth><HrLayout /></RequireAuth>}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/positions" element={<Positions />} />
+        <Route path="/positions/:jobId" element={<PositionApplicants />} />
+        <Route path="/compare" element={<Compare />} />
         <Route path="/candidate/:id" element={<CandidateDetail />} />
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/logs" element={<RequireAuth roles={['Admin']}><Logs /></RequireAuth>} />

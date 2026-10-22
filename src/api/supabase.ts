@@ -1,8 +1,8 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Api } from './api';
 import type {
-  ApplicationInput, AuthorizedUser, Candidate, CandidateRow, Job, MatchResult,
-  OpenPosition, Role, SubmitResult, SystemConfig, SystemLog
+  ApplicantItem, ApplicantPage, ApplicationInput, AuthorizedUser, Candidate, Job, MatchResult,
+  OpenPosition, PositionStat, Role, SubmitResult, SystemConfig, SystemLog
 } from './types';
 
 const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -118,13 +118,92 @@ export const supabaseApi: Api = {
     return ok(await sb().from('job_requirements').upsert(row).select().single()) as Job;
   },
 
-  async listCandidateRows(jobId): Promise<CandidateRow[]> {
+  async positionStats(): Promise<PositionStat[]> {
+    const rows = (ok(await sb().rpc('position_stats')) ?? []) as Record<string, unknown>[];
+    return rows.map((r) => ({
+      job_id: String(r.job_id),
+      position_name: String(r.position_name),
+      is_active: Boolean(r.is_active),
+      match_threshold: Number(r.match_threshold),
+      close_at: (r.close_at as string | null) ?? null,
+      total: Number(r.total), unread: Number(r.unread), starred: Number(r.starred),
+      pending: Number(r.pending), failed: Number(r.failed), passed: Number(r.passed),
+      below: Number(r.below), gate: Number(r.gate), hired: Number(r.hired),
+      avg_score: r.avg_score === null || r.avg_score === undefined ? null : Number(r.avg_score),
+      buckets: ((r.buckets as number[] | null) ?? []).map(Number)
+    }));
+  },
+
+  async listApplicants(q): Promise<ApplicantPage> {
+    // กรอง ค้นหา เรียง และแบ่งหน้าทำในฐานข้อมูล (ฟังก์ชัน list_position_applicants) ดึงมาเฉพาะหน้าที่เปิดดู
+    const rows = (ok(await sb().rpc('list_position_applicants', {
+      p_job_id: q.jobId,
+      p_q: q.q?.trim() || null,
+      p_kind: q.kind ?? 'all',
+      p_app_status: q.appStatus || null,
+      p_unread: q.unread ?? false,
+      p_starred: q.starred ?? false,
+      p_sort: q.sort ?? 'score',
+      p_limit: q.pageSize,
+      p_offset: (q.page - 1) * q.pageSize
+    })) ?? []) as Record<string, unknown>[];
+    const items: ApplicantItem[] = rows.map((r) => ({
+      candidate: {
+        candidate_id: String(r.candidate_id), full_name: String(r.full_name), phone_number: String(r.phone_number),
+        email: String(r.email), applied_position: String(r.applied_position),
+        self_reported_experience_range: (r.self_reported_experience_range as string | null) ?? null,
+        skills: (r.skills as string[] | null) ?? [], resume_file_url: String(r.resume_file_url),
+        received_at: String(r.received_at), application_status: String(r.application_status),
+        processing_status: r.processing_status as Candidate['processing_status'],
+        processing_error: (r.processing_error as string | null) ?? null,
+        is_read: Boolean(r.is_read), starred: Boolean(r.starred), hr_note: (r.hr_note as string | null) ?? null
+      },
+      score: r.match_score === null || r.match_score === undefined ? null : Number(r.match_score),
+      gate: (r.gate_status as string | null) ?? null,
+      kind: r.kind as ApplicantItem['kind']
+    }));
+    return { items, total: rows.length ? Number(rows[0].total_count) : 0 };
+  },
+
+  async setRead(ids, read) {
+    if (!ids.length) return;
+    ok(await sb().from('candidates').update({ is_read: read, read_at: read ? new Date().toISOString() : null }).in('candidate_id', ids));
+  },
+
+  async setStarred(id, starred) {
+    ok(await sb().from('candidates').update({ starred }).eq('candidate_id', id));
+  },
+
+  async saveNote(id, note) {
+    const { data } = await sb().auth.getSession();
+    const text = note.trim();
+    ok(await sb().from('candidates').update({ hr_note: text || null, hr_note_at: new Date().toISOString(), hr_note_by: data.session?.user.email ?? null }).eq('candidate_id', id));
+  },
+
+  async countDeletableRead(jobId) {
     const job = ok(await sb().from('job_requirements').select('position_name').eq('job_id', jobId).maybeSingle()) as { position_name: string } | null;
-    if (!job) return [];
-    const cands = (ok(await sb().from('candidates').select('*').eq('applied_position', job.position_name).order('received_at', { ascending: false })) ?? []) as Candidate[];
-    if (cands.length === 0) return [];
-    const matches = (ok(await sb().from('match_results').select('*').eq('job_id', jobId).in('candidate_id', cands.map((c) => c.candidate_id)).order('evaluated_at', { ascending: false })) ?? []) as MatchResult[];
-    return cands.map((candidate) => ({ candidate, match: matches.find((m) => m.candidate_id === candidate.candidate_id) ?? null }));
+    if (!job) return 0;
+    const { count, error } = await sb().from('candidates').select('candidate_id', { count: 'exact', head: true })
+      .eq('applied_position', job.position_name).eq('is_read', true).eq('starred', false).neq('application_status', 'Hired');
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  },
+
+  async deleteReadCandidates(jobId) {
+    // ฐานข้อมูลลบแถวและคืนที่อยู่ไฟล์ Resume มา จากนั้นลบไฟล์ใน Storage ต่อ
+    const { data, error } = await sb().rpc('delete_read_candidates', { p_job_id: jobId });
+    if (error) {
+      if (/could not find the function|does not exist/i.test(error.message)) {
+        throw new Error('ยังไม่ได้เปิดใช้ฟังก์ชันลบในฐานข้อมูล ให้ผู้ดูแลรันไฟล์ supabase/migrations/20261022b_delete_read_candidates.sql ใน Supabase SQL Editor หนึ่งครั้ง');
+      }
+      throw new Error(error.message);
+    }
+    const urls = (data ?? []) as string[];
+    const paths = urls.map((u) => u.match(/\/object\/(?:public\/)?resumes\/(.+)$/)?.[1]).filter((x): x is string => Boolean(x)).map(decodeURIComponent);
+    for (let i = 0; i < paths.length; i += 100) {
+      await sb().storage.from('resumes').remove(paths.slice(i, i + 100)); // ไฟล์ที่ลบไม่ได้ไม่ทำให้การลบข้อมูลล้ม
+    }
+    return urls.length;
   },
 
   async getCandidate(id) {
