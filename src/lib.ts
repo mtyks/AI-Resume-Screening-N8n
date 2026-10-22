@@ -74,7 +74,7 @@ export const KIND_BAR: Record<RowKind, string> = {
 /** คำอธิบายวิธีคิดคะแนน (มีแบบเดียว) แสดงในหน้ารายละเอียดผู้สมัคร */
 export const SCORE_NOTE = 'คำนวณจากทักษะและเครื่องมือเท่านั้น ประสบการณ์ไม่นำมาคิดคะแนน';
 
-export function rangeUpperYears(r: string | null): number | null {
+function rangeUpperYears(r: string | null): number | null {
   if (!r) return null;
   if (r.startsWith('ไม่มีประสบการณ์')) return 0;
   const nums = (r.match(/\d+(?:\.\d+)?/g) ?? []).map(Number);
@@ -93,22 +93,6 @@ export function expFlag(c: Candidate, job: Job): ExpFlag {
   if (up === null) return { level: 'unknown', label: 'ผู้สมัครไม่ได้ระบุประสบการณ์' };
   if (up < job.min_experience_years) return { level: 'low', label: `ประสบการณ์ที่แจ้งต่ำกว่าเกณฑ์ (ต้องการ ≥ ${job.min_experience_years} ปี)` };
   return { level: 'ok', label: `ตรงเกณฑ์ประสบการณ์ที่แจ้ง (≥ ${job.min_experience_years} ปี)` };
-}
-
-export function expText(row: CandidateRow): string {
-  const { candidate: c } = row;
-  return `ประสบการณ์ที่ผู้สมัครแจ้ง: ${c.self_reported_experience_range ?? 'ไม่ระบุ'}`;
-}
-
-export function kindNote(kind: RowKind, row: CandidateRow, job: Job): string {
-  const { candidate: c, match: m } = row;
-  switch (kind) {
-    case 'pass': return 'ส่งต่อให้ HR พิจารณา';
-    case 'below': return m ? `ขาด ${(job.match_threshold - m.match_score).toFixed(1)} คะแนนถึงเกณฑ์` : '';
-    case 'gate': return m ? m.gate_status.replace('Failed: ', '') : '';
-    case 'failed': return c.processing_error ?? '';
-    default: return 'กำลังอยู่ในคิว';
-  }
 }
 
 /** ป้ายสถานะการสมัครที่ HR เห็น (ค่าที่เก็บใน DB ยังเป็น In Review / Hired / Rejected ตาม check constraint) */

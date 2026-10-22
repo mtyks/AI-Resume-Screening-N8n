@@ -21,7 +21,6 @@ const REMEMBER_KEY = 'rs-remember';
 function remembered(): boolean {
   try { return localStorage.getItem(REMEMBER_KEY) !== '0'; } catch { return true; }
 }
-export function getRemember(): boolean { return remembered(); }
 const authStorage = {
   getItem(k: string): string | null {
     try { return sessionStorage.getItem(k) ?? localStorage.getItem(k); } catch { return null; }

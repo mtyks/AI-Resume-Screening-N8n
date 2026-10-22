@@ -13,6 +13,12 @@ const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { sta
 const EXPERIENCE = ['ไม่มีประสบการณ์ (นักศึกษาจบใหม่)', '1-3 ปี', '3-5 ปี', 'มากกว่า 5 ปี'];
 const MAX_BYTES = 5 * 1024 * 1024;
 
+// ไฟล์ PDF จริงต้องขึ้นต้นด้วย "%PDF-" (กันการเปลี่ยนนามสกุล/ประเภทไฟล์อื่นให้ดูเป็น PDF)
+async function looksLikePdf(file: File): Promise<boolean> {
+  const head = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+  return head.length === 5 && String.fromCharCode(...head) === '%PDF-';
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ status: 'error', message: 'method not allowed' }, 405);
@@ -21,7 +27,7 @@ Deno.serve(async (req) => {
   try { form = await req.formData(); } catch { return json({ status: 'error', message: 'ข้อมูลที่ส่งมาไม่ถูกต้อง' }, 400); }
 
   const file = form.get('resume');
-  if (!(file instanceof File) || file.type !== 'application/pdf' || file.size > MAX_BYTES) {
+  if (!(file instanceof File) || file.type !== 'application/pdf' || file.size > MAX_BYTES || file.size < 5 || !(await looksLikePdf(file))) {
     return json({ status: 'error', message: 'ไฟล์ Resume ต้องเป็น PDF ขนาดไม่เกิน 5 MB' }, 400);
   }
 
