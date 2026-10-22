@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Api } from './api';
 import type {
   ApplicantItem, ApplicantPage, ApplicationInput, AuthorizedUser, Candidate, Job, MatchResult,
-  OpenPosition, PositionStat, Role, SubmitResult, SystemConfig, SystemLog
+  AuditEntry, OpenPosition, PositionStat, Role, SubmitResult, SystemConfig, SystemLog
 } from './types';
 
 const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -68,6 +68,8 @@ export const supabaseApi: Api = {
     fd.set('applied_position', input.applied_position);
     if (input.self_reported_experience_range) fd.set('self_reported_experience_range', input.self_reported_experience_range);
     fd.set('resume', input.resume);
+    fd.set('consent', 'true'); // ฟอร์มบังคับติ๊กยินยอมก่อนส่ง Edge Function ตรวจซ้ำอีกชั้น
+    if (input.turnstileToken) fd.set('cf-turnstile-response', input.turnstileToken);
     try {
       const res = await fetch(`${URL}/functions/v1/submit-application`, { method: 'POST', headers: { apikey: KEY ?? '', Authorization: `Bearer ${KEY}` }, body: fd });
       const j = (await res.json().catch(() => ({}))) as { status?: string; candidate_id?: string; message?: string };
@@ -238,6 +240,15 @@ export const supabaseApi: Api = {
 
   async listLogs(): Promise<SystemLog[]> {
     return ok(await sb().from('system_logs').select('*').order('timestamp', { ascending: false }).limit(500)) ?? [];
+  },
+
+  async listAudit(): Promise<AuditEntry[]> {
+    return ok(await sb().from('audit_log').select('*').order('at', { ascending: false }).limit(500)) ?? [];
+  },
+
+  async logExport(target: string, rows: number): Promise<void> {
+    // บันทึกประวัติเป็นเรื่องรอง ถ้าบันทึกไม่ได้ไม่ควรทำให้การส่งออกล้ม
+    try { await sb().rpc('log_audit', { p_action: 'export_csv', p_target: target, p_detail: { rows } }); } catch { /* ignore */ }
   },
 
   async listFailedCandidates(): Promise<Candidate[]> {

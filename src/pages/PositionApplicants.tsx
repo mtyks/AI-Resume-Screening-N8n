@@ -62,14 +62,14 @@ export default function PositionApplicants() {
     if (qText === q) return;
     const t = setTimeout(() => setParams({ q: qText.trim() || null }), 300);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [qText]);
 
   const [version, setVersion] = useState(0); // เพิ่มค่าเพื่อโหลดรายการใหม่หลังแก้ข้อมูล
   const list = useAsync(() => api.listApplicants({ jobId, q, kind, appStatus, unread, starred, sort, page, pageSize: size }), [jobId, q, kind, appStatus, unread, starred, sort, page, size, version]);
   const total = list.data?.total ?? 0;
   const lastPage = Math.max(1, Math.ceil(total / size));
-  useEffect(() => { if (list.data && page > lastPage) setParams({ page: String(lastPage) }, true); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [list.data, lastPage]);
+  useEffect(() => { if (list.data && page > lastPage) setParams({ page: String(lastPage) }, true);   }, [list.data, lastPage]);
 
   const [selected, setSelected] = useState<Map<string, string>>(new Map()); // id → ชื่อ (เก็บข้ามหน้า)
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
@@ -119,6 +119,7 @@ export default function PositionApplicants() {
         if (p * 500 >= r.total || r.items.length === 0) break;
       }
       downloadCsv(`${stat?.position_name ?? jobId}-ผู้สมัคร.csv`, rows);
+      void api.logExport(stat?.position_name ?? String(jobId), rows.length - 1);
       setNotice({ ok: true, text: `ส่งออก ${rows.length - 1} รายการแล้ว (เปิดด้วย Excel ได้)` });
     } catch (e) { setNotice({ ok: false, text: e instanceof Error ? e.message : 'ส่งออกไม่สำเร็จ' }); }
     finally { setExporting(false); }

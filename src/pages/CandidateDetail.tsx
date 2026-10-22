@@ -127,7 +127,7 @@ export default function CandidateDetail() {
   useEffect(() => {
     if (!loadedId || wasRead) return;
     api.setRead([loadedId], true).then(reloadStats).catch(() => { /* ไม่ทำให้หน้าเสียถ้าบันทึกไม่สำเร็จ */ });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [loadedId]);
 
   if (data.loading && !data.data) return <main className="page"><Loading /></main>;

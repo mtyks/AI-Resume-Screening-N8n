@@ -1,5 +1,6 @@
 import type { Api } from './api';
 import type {
+  AuditEntry,
   ApplicantItem,
   ApplicantKind,
   ApplicantPage,
@@ -334,6 +335,11 @@ function allApplicants(job: Job): ApplicantItem[] {
 
 /* ------------------------------- API ------------------------------- */
 
+const auditLocal: AuditEntry[] = [
+  { id: 3, at: new Date(Date.now() - 3600e3).toISOString(), actor: 'hr@example.com', action: 'status_change', target: 'C10000001', detail: { from: 'In Review', to: 'Hired' } },
+  { id: 2, at: new Date(Date.now() - 7200e3).toISOString(), actor: 'hr@example.com', action: 'export_csv', target: 'Automation Developer', detail: { rows: 46 } },
+  { id: 1, at: new Date(Date.now() - 86400e3).toISOString(), actor: 'ระบบอัตโนมัติ', action: 'candidate_removed', target: 'C10000002', detail: null }
+];
 const NET = 220; // หน่วงเวลาเล็กน้อยให้เหมือนเรียกเครือข่ายจริง
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
@@ -556,6 +562,15 @@ export const mockApi: Api = {
   async listLogs() {
     await sleep(NET);
     return clone(store.logs);
+  },
+
+  async listAudit() {
+    await sleep(NET);
+    return clone(auditLocal);
+  },
+
+  async logExport(target, rows) {
+    auditLocal.unshift({ id: Date.now(), at: new Date().toISOString(), actor: 'demo@example.com', action: 'export_csv', target, detail: { rows } });
   },
 
   async listFailedCandidates() {

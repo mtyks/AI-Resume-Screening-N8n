@@ -1,9 +1,10 @@
-import { useState, type DragEvent, type FormEvent } from 'react';
+import { useCallback, useState, type DragEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import type { SubmitResult } from '../api';
 import { useAsync } from '../lib';
 import { Mark, ResumeArt } from '../ui';
+import { Turnstile, TURNSTILE_SITE_KEY } from '../turnstile';
 
 const EXP = ['ไม่มีประสบการณ์ (นักศึกษาจบใหม่)', '1-3 ปี', '3-5 ปี', 'มากกว่า 5 ปี'];
 
@@ -25,6 +26,8 @@ export default function Apply() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [posQ, setPosQ] = useState('');
+  const [tsToken, setTsToken] = useState('');
+  const onToken = useCallback((t: string) => setTsToken(t), []);
 
   const set = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -39,6 +42,7 @@ export default function Apply() {
     else if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) e.resume = 'ไฟล์ต้องเป็น PDF เท่านั้น';
     else if (file.size > 5 * 1024 * 1024) e.resume = 'ไฟล์ใหญ่เกิน 5 MB ลองบีบอัดไฟล์แล้วแนบใหม่';
     if (!consent) e.consent = 'ติ๊กยินยอมก่อนส่งใบสมัคร';
+    if (TURNSTILE_SITE_KEY && !tsToken) e.consent = e.consent ?? 'รอการยืนยันว่าไม่ใช่บอทสักครู่ แล้วกดส่งอีกครั้ง';
     return e;
   }
 
@@ -54,7 +58,7 @@ export default function Apply() {
     }
     setBusy(true);
     try {
-      setResult(await api.submitApplication({ ...form, self_reported_experience_range: exp, resume: file }));
+      setResult(await api.submitApplication({ ...form, self_reported_experience_range: exp, resume: file, turnstileToken: tsToken || undefined }));
     } catch {
       setResult({ status: 'error', message: 'ระบบขัดข้องชั่วคราว' });
     } finally {
@@ -205,8 +209,9 @@ export default function Apply() {
 
                 <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', fontSize: 15, lineHeight: 1.6, cursor: 'pointer' }}>
                   <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} aria-invalid={bad('consent')} style={{ width: 22, height: 22, margin: '2px 0 0', accentColor: 'var(--brand)', flex: '0 0 22px' }} />
-                  <span>ฉันยินยอมให้เก็บและใช้ข้อมูลในใบสมัครเพื่อการพิจารณาสมัครงาน</span>
+                  <span>ฉันยินยอมให้เก็บและใช้ข้อมูลในใบสมัคร (ชื่อ เบอร์โทร อีเมล และ Resume) เพื่อการพิจารณาสมัครงาน โดยข้อมูลจะถูกเก็บไว้ไม่เกิน 90 วันนับจากวันสมัคร แล้วลบทิ้งอัตโนมัติ (ยกเว้นผู้ที่ได้รับเข้าทำงาน) และใช้ AI ช่วยอ่านเทียบทักษะกับตำแหน่ง</span>
                 </label>
+                <Turnstile onToken={onToken} />
                 {errors.consent && <span className="err" role="alert" style={{ color: 'var(--danger-ink)', fontSize: 13.5, fontWeight: 500 }}>{errors.consent}</span>}
               </section>
 

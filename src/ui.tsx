@@ -46,6 +46,7 @@ function HrShell() {
           <NavLink to="/positions" className={link}><IconPeople /> ผู้สมัคร{unreadTotal > 0 && <span className="navbadge" aria-label={`ยังไม่อ่าน ${unreadTotal} คน`}>{unreadTotal > 99 ? '99+' : unreadTotal}</span>}</NavLink>
           <NavLink to="/jobs" className={link}><IconJobs /> ตำแหน่งงาน</NavLink>
           {isAdmin && <NavLink to="/logs" className={link}><IconLog /> สถานะระบบ</NavLink>}
+          {isAdmin && <NavLink to="/audit" className={link}><IconLog /> ประวัติการใช้งาน</NavLink>}
           {isAdmin && <NavLink to="/admin" className={link}><IconUsers /> ผู้ใช้และตั้งค่า</NavLink>}
         </nav>
         <div className="userbox">

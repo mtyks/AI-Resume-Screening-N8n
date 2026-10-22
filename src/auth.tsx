@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .finally(() => setReady(true));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- ทำครั้งเดียวตอนเปิดหน้า
+     
   }, []);
 
   const signInGoogle = useCallback(async (remember = true) => {

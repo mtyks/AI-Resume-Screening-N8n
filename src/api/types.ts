@@ -81,6 +81,15 @@ export interface MatchResult {
 
 export type LogStatus = 'Success' | 'Error';
 
+export interface AuditEntry {
+  id: number;
+  at: string;
+  actor: string;
+  action: string;
+  target: string | null;
+  detail: Record<string, unknown> | null;
+}
+
 export interface SystemLog {
   log_id: number;
   candidate_id: string | null;
@@ -112,6 +121,8 @@ export interface ApplicationInput {
   applied_position: string;
   self_reported_experience_range: string | null;
   resume: File;
+  /** โทเคนจาก Cloudflare Turnstile (มีเมื่อตั้งค่า VITE_TURNSTILE_SITE_KEY) */
+  turnstileToken?: string;
 }
 
 export type SubmitResult =

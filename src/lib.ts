@@ -21,7 +21,7 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, deps);
 
   useEffect(() => run(), [run]);

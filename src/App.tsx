@@ -8,6 +8,7 @@ import CandidateDetail from './pages/CandidateDetail';
 import Jobs from './pages/Jobs';
 import Logs from './pages/Logs';
 import Admin from './pages/Admin';
+import Audit from './pages/Audit';
 import Positions from './pages/Positions';
 import PositionApplicants from './pages/PositionApplicants';
 import Compare from './pages/Compare';
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/candidate/:id" element={<CandidateDetail />} />
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/logs" element={<RequireAuth roles={['Admin']}><Logs /></RequireAuth>} />
+        <Route path="/audit" element={<RequireAuth roles={['Admin']}><Audit /></RequireAuth>} />
         <Route path="/admin" element={<RequireAuth roles={['Admin']}><Admin /></RequireAuth>} />
       </Route>
 

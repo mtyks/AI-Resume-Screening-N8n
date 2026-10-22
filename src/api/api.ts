@@ -1,5 +1,6 @@
 import type {
   ApplicationInput,
+  AuditEntry,
   AuthorizedUser,
   Job,
   MatchResult,
@@ -60,6 +61,10 @@ export interface Api {
   // Log
   listLogs(): Promise<SystemLog[]>;
   listFailedCandidates(): Promise<Candidate[]>;
+  /** ประวัติการใช้งานของ HR/Admin (เฉพาะ Admin) */
+  listAudit(): Promise<AuditEntry[]>;
+  /** บันทึกว่ามีการส่งออก CSV (ชื่อตำแหน่งและจำนวนแถว) */
+  logExport(target: string, rows: number): Promise<void>;
 
   // ผู้ใช้และการตั้งค่า (Admin)
   listUsers(): Promise<AuthorizedUser[]>;
