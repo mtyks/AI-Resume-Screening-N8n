@@ -203,6 +203,16 @@ export default function CandidateDetail() {
         </div>
       </section>
 
+      {c.processing_status === 'processed' && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button type="button" className="btn small" title="ให้ระบบอ่าน Resume และคิดคะแนนใหม่ (สถานะพิจารณา ดาว และโน้ตไม่เปลี่ยน)" onClick={async () => {
+            if (!window.confirm('สแกนซ้ำ? ระบบจะอ่าน Resume และคิดคะแนนใหม่ ผลเดิมยังเก็บไว้เป็นประวัติ')) return;
+            try { await api.retryCandidate(c.candidate_id); } catch (e) { window.alert(e instanceof Error ? e.message : 'สั่งสแกนซ้ำไม่สำเร็จ'); }
+            data.reload();
+          }}>สแกนซ้ำ</button>
+        </div>
+      )}
+
       {c.processing_status !== 'processed' && (
         <div className={`alert ${c.processing_status === 'failed' ? 'err' : 'warn'}`} role="status">
           {c.processing_status === 'failed' ? `ประมวลผลไม่สำเร็จ: ${c.processing_error ?? ''}` : 'ใบสมัครนี้อยู่ในคิว ยังไม่มีผลการประเมิน'}

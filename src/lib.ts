@@ -112,7 +112,7 @@ export function itemNote(it: ApplicantItem, threshold: number): string {
     case 'below': return it.score !== null ? `ขาด ${(threshold - it.score).toFixed(1)} คะแนนถึงเกณฑ์` : '';
     case 'gate': return it.gate ? it.gate.replace('Failed: ', '') : '';
     case 'failed': return it.candidate.processing_error ?? '';
-    default: return 'กำลังอยู่ในคิว';
+    default: return 'กำลังประมวลผล (ปกติ 1–2 นาที)';
   }
 }
 

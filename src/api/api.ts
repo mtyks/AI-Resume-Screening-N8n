@@ -54,6 +54,8 @@ export interface Api {
   setApplicationStatus(candidateId: string, status: string): Promise<void>;
   retryCandidate(candidateId: string): Promise<void>;
   /** ลิงก์ชั่วคราวสำหรับเปิดไฟล์ Resume (bucket เป็น private) */
+  /** สแกนซ้ำหลายคน (ทุกสถานะ) คืนจำนวนที่ส่งเข้าคิว */
+  retryMany(candidateIds: string[]): Promise<number>;
   getResumeUrl(candidate: Candidate): Promise<string | null>;
   /** Admin แก้ข้อมูลติดต่อและช่วงประสบการณ์ของผู้สมัคร */
   updateCandidate(candidateId: string, patch: CandidatePatch): Promise<void>;

@@ -225,6 +225,10 @@ export const supabaseApi: Api = {
     ok(await sb().rpc('request_rescan', { p_candidate_id: id }));
   },
 
+  async retryMany(ids: string[]): Promise<number> {
+    return Number(ok(await sb().rpc('request_rescan_many', { p_ids: ids })) ?? 0);
+  },
+
   async getResumeUrl(candidate): Promise<string | null> {
     // เก็บเป็น URL เต็มของ storage แต่ bucket เป็น private จึงดึงชื่อไฟล์แล้วขอลิงก์ชั่วคราว (10 นาที)
     const m = candidate.resume_file_url.match(/\/object\/(?:public\/)?resumes\/(.+)$/);

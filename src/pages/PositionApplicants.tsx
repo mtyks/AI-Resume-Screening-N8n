@@ -75,6 +75,14 @@ export default function PositionApplicants() {
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const items = list.data?.items ?? [];
 
+  // มีคนที่ยังประมวลผลอยู่ → โหลดรายการใหม่เองทุก 10 วินาที จนกว่าจะเสร็จ (ไม่ต้องกดรีเฟรช)
+  const hasPending = items.some((it) => it.kind === 'pending');
+  useEffect(() => {
+    if (!hasPending) return;
+    const t = setInterval(() => { setVersion((v) => v + 1); reloadStats(); }, 10000);
+    return () => clearInterval(t);
+  }, [hasPending, reloadStats]);
+
   function toggleSel(it: ApplicantItem) {
     setSelected((m) => {
       const n = new Map(m);
@@ -93,6 +101,17 @@ export default function PositionApplicants() {
       setVersion((v) => v + 1);
       reloadStats();
     } catch (e) { setNotice({ ok: false, text: e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ' }); }
+  }
+
+  async function rescan(ids: string[]) {
+    setNotice(null);
+    try {
+      const n = await api.retryMany(ids);
+      setNotice({ ok: true, text: `ส่ง ${n} คนเข้าคิวสแกนใหม่แล้ว ระบบประมวลผลทีละไม่เกิน 5 คนทุก 5 นาที ผลจะอัปเดตเองในหน้านี้` });
+      setSelected(new Map());
+      setVersion((v) => v + 1);
+      reloadStats();
+    } catch (e) { setNotice({ ok: false, text: e instanceof Error ? e.message : 'สั่งสแกนซ้ำไม่สำเร็จ' }); }
   }
 
   async function toggleStar(it: ApplicantItem) {
@@ -273,15 +292,9 @@ export default function PositionApplicants() {
                 <span className={`pill ${it.kind}`}>{KIND_LABEL[it.kind]}</span>
                 <span className="muted" style={{ fontSize: 12.5, lineHeight: 1.5 }}>{itemNote(it, stat?.match_threshold ?? 0)}</span>
               </div>
-              <div className="c-act" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                {it.kind === 'failed' || it.kind === 'pending'
-                  ? <button className="btn small ctl" type="button" onClick={async () => {
-                    setNotice(null);
-                    try { await api.retryCandidate(c.candidate_id); setNotice({ ok: true, text: `ส่ง ${c.full_name} เข้าคิวสแกนใหม่แล้ว ระบบจะประมวลผลภายในไม่กี่นาที` }); }
-                    catch (e) { setNotice({ ok: false, text: e instanceof Error ? e.message : 'สั่งสแกนซ้ำไม่สำเร็จ' }); }
-                    setVersion((v) => v + 1);
-                  }}>สแกนซ้ำ</button>
-                  : <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--brand)' }}>ดูรายละเอียด →</span>}
+              <div className="c-act" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                {it.kind !== 'failed' && it.kind !== 'pending' && <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--brand)' }}>ดูรายละเอียด →</span>}
+                {it.kind !== 'pending' && <button className="btn small ctl" type="button" title="ให้ระบบอ่าน Resume และคิดคะแนนใหม่" onClick={() => void rescan([c.candidate_id])}>สแกนซ้ำ</button>}
               </div>
             </div>
           );
@@ -306,6 +319,7 @@ export default function PositionApplicants() {
           <button type="button" className="btn small primary" disabled={selIds.length < 2 || selIds.length > MAX_COMPARE} title="เลือก 2–3 คน" onClick={() => nav(`/compare?job=${jobId}&ids=${selIds.join(',')}`)}>เปรียบเทียบ{selIds.length > MAX_COMPARE ? ' (เลือกไม่เกิน 3)' : ''}</button>
           <button type="button" className="btn small" onClick={() => void markRead(selIds, true)}>ทำเป็นอ่านแล้ว</button>
           <button type="button" className="btn small" onClick={() => void markRead(selIds, false)}>ทำเป็นยังไม่อ่าน</button>
+          <button type="button" className="btn small" title="ให้ระบบอ่าน Resume และคิดคะแนนใหม่" onClick={() => void rescan(selIds)}>สแกนซ้ำที่เลือก</button>
           <button type="button" className="btn small" style={{ marginLeft: 'auto' }} onClick={() => setSelected(new Map())}>ล้างที่เลือก</button>
         </div>
       )}

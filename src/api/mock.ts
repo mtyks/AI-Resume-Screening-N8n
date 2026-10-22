@@ -559,6 +559,21 @@ export const mockApi: Api = {
     processCandidate(candidateId);
   },
 
+  async retryMany(ids) {
+    await sleep(NET);
+    let n = 0;
+    for (const id of ids) {
+      const c = store.candidates.find((x) => x.candidate_id === id);
+      if (!c) continue;
+      c.processing_status = 'pending';
+      c.processing_error = null;
+      processCandidate(id);
+      n++;
+    }
+    persist();
+    return n;
+  },
+
   async listLogs() {
     await sleep(NET);
     return clone(store.logs);
