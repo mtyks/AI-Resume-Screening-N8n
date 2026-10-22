@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { csvCell, expFlag, itemNote } from './lib';
+import { csvCell, expFlag, itemNote, mustAvg } from './lib';
 import type { Candidate, Job } from './api';
 
 describe('csvCell', () => {
@@ -40,5 +40,16 @@ describe('expFlag', () => {
 describe('itemNote', () => {
   it('บอกคะแนนที่ขาดถึงเกณฑ์', () => {
     expect(itemNote({ kind: 'below', score: 55.5 } as never, 60)).toBe('ขาด 4.5 คะแนนถึงเกณฑ์');
+  });
+});
+
+describe('mustAvg', () => {
+  it('ข้อที่พบ (>= 50) นับเต็ม 100', () => {
+    expect(mustAvg([{ confidence: 75 }, { confidence: 75 }])).toBe(100);
+    expect(mustAvg([{ confidence: 50 }])).toBe(100);
+  });
+  it('ข้อที่ไม่ถึงเกณฑ์นับตามจริง', () => {
+    expect(mustAvg([{ confidence: 80 }, { confidence: 20 }])).toBe(60);
+    expect(mustAvg([])).toBe(0);
   });
 });

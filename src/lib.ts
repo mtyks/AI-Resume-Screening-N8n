@@ -71,8 +71,17 @@ export const KIND_BAR: Record<RowKind, string> = {
   failed: 'var(--muted)'
 };
 
+/** ความมั่นใจขั้นต่ำที่ถือว่า "พบทักษะ" (ตรงกับค่า GATE_MIN ใน n8n โหนด 5.1) */
+export const FOUND_MIN = 50;
+
+/** ค่าเฉลี่ยของหมวด "ทักษะที่ต้องมี": ข้อที่พบ (>= 50) นับ 100 เต็ม ข้อที่ไม่ถึงนับตามจริง */
+export function mustAvg(xs: { confidence: number }[]): number {
+  if (!xs.length) return 0;
+  return xs.reduce((s, x) => s + (x.confidence >= FOUND_MIN ? 100 : x.confidence), 0) / xs.length;
+}
+
 /** คำอธิบายวิธีคิดคะแนน (มีแบบเดียว) แสดงในหน้ารายละเอียดผู้สมัคร */
-export const SCORE_NOTE = 'คำนวณจากทักษะและเครื่องมือเท่านั้น ประสบการณ์ไม่นำมาคิดคะแนน';
+export const SCORE_NOTE = 'คำนวณจากทักษะและเครื่องมือเท่านั้น ทักษะที่ต้องมีข้อที่พบนับเต็ม 100 ประสบการณ์ไม่นำมาคิดคะแนน';
 
 function rangeUpperYears(r: string | null): number | null {
   if (!r) return null;

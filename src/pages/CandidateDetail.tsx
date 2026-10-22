@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 import { api } from '../api';
 import { useAuth } from '../auth';
 import type { Candidate, CriterionEval } from '../api';
-import { SCORE_NOTE, STATUS_LABEL, KIND_LABEL, expFlag, fmtShort, fmtStamp, rowKind, useAsync } from '../lib';
+import { SCORE_NOTE, STATUS_LABEL, KIND_LABEL, expFlag, fmtShort, fmtStamp, mustAvg, rowKind, useAsync } from '../lib';
 import { useStats } from '../stats';
 import { ErrorBox, ErrorPeek, Loading } from '../ui';
 
@@ -160,7 +160,7 @@ export default function CandidateDetail() {
   const avg = (xs: CriterionEval[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b.confidence, 0) / xs.length) : 0);
   const wsum = job ? job.weight_musthave + job.weight_preferred + job.weight_tool || 1 : 1;
   const parts = job && d ? [
-    { name: 'ทักษะที่ต้องมี', w: job.weight_musthave / wsum, a: avg(d.must_have_evaluation) },
+    { name: 'ทักษะที่ต้องมี', w: job.weight_musthave / wsum, a: Math.round(mustAvg(d.must_have_evaluation)) },
     { name: 'ทักษะที่ควรมี', w: job.weight_preferred / wsum, a: avg(d.preferred_evaluation) },
     { name: 'เครื่องมือที่ต้องใช้', w: job.weight_tool / wsum, a: avg(d.tool_evaluation) }
   ] : [];
