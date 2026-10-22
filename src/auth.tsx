@@ -12,7 +12,7 @@ interface AuthValue {
   session: Session | null;
   ready: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signInGoogle: () => Promise<void>;
+  signInGoogle: (remember?: boolean) => Promise<void>;
   signOut: () => void;
 }
 
@@ -62,14 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ทำครั้งเดียวตอนเปิดหน้า
   }, []);
 
-  const signInGoogle = useCallback(async () => {
+  const signInGoogle = useCallback(async (remember = true) => {
     try {
       sessionStorage.setItem(OAUTH_FLAG, '1');
     } catch {
       /* ignore */
     }
     try {
-      await api.signInGoogle();
+      await api.signInGoogle(remember);
     } catch (e) {
       try {
         sessionStorage.removeItem(OAUTH_FLAG);

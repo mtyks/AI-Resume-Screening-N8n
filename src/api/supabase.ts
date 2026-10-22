@@ -11,10 +11,37 @@ const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 /** true เมื่อตั้งค่า .env ครบ → ใช้ฐานข้อมูลจริง */
 export const supabaseConfigured = Boolean(URL && KEY);
 
+/**
+ * ที่เก็บ session ตามตัวเลือก "จดจำการเข้าสู่ระบบ":
+ *  - ติ๊ก  → localStorage  (ปิดเบราว์เซอร์แล้วเปิดใหม่ยังเข้าได้เลย)
+ *  - ไม่ติ๊ก → sessionStorage (ปิดแท็บ/เบราว์เซอร์แล้วต้องล็อกอินใหม่)
+ * ค่าที่เลือกจำไว้ใน localStorage คีย์ REMEMBER_KEY
+ */
+const REMEMBER_KEY = 'rs-remember';
+function remembered(): boolean {
+  try { return localStorage.getItem(REMEMBER_KEY) !== '0'; } catch { return true; }
+}
+export function getRemember(): boolean { return remembered(); }
+const authStorage = {
+  getItem(k: string): string | null {
+    try { return sessionStorage.getItem(k) ?? localStorage.getItem(k); } catch { return null; }
+  },
+  setItem(k: string, v: string): void {
+    try {
+      const [keep, drop] = remembered() ? [localStorage, sessionStorage] : [sessionStorage, localStorage];
+      keep.setItem(k, v);
+      drop.removeItem(k);
+    } catch { /* ที่เก็บถูกบล็อก: ล็อกอินได้เฉพาะรอบนี้ */ }
+  },
+  removeItem(k: string): void {
+    try { sessionStorage.removeItem(k); localStorage.removeItem(k); } catch { /* ignore */ }
+  }
+};
+
 let client: SupabaseClient | null = null;
 function sb(): SupabaseClient {
   if (!URL || !KEY) throw new Error('ยังไม่ได้ตั้งค่า VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY');
-  client ??= createClient(URL, KEY, { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true } });
+  client ??= createClient(URL, KEY, { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true, storage: authStorage } });
   return client;
 }
 
@@ -57,7 +84,8 @@ export const supabaseApi: Api = {
     throw new Error('ใช้การเข้าสู่ระบบด้วย Google เท่านั้น');
   },
 
-  async signInGoogle() {
+  async signInGoogle(remember = true) {
+    try { localStorage.setItem(REMEMBER_KEY, remember ? '1' : '0'); } catch { /* ignore */ }
     const redirectTo = window.location.origin + window.location.pathname;
     const { error } = await sb().auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
     if (error) throw new Error(error.message);

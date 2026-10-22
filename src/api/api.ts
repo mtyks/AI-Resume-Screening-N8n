@@ -26,7 +26,7 @@ export interface Api {
 
   // เข้าสู่ระบบ
   signIn(email: string, password: string): Promise<{ email: string; role: Role }>;
-  signInGoogle(): Promise<void>;
+  signInGoogle(remember?: boolean): Promise<void>;
   signOut(): Promise<void>;
   restoreSession(): Promise<{ email: string; role: Role } | null>;
 

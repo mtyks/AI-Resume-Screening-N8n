@@ -12,6 +12,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [remember, setRemember] = useState(true); // ติ๊ก = ไม่ต้องล็อกอินซ้ำเมื่อกลับมาใหม่
 
   if (session) return <Navigate to="/dashboard" replace />;
   const from = (loc.state as { from?: string } | null)?.from ?? '/dashboard';
@@ -33,7 +34,7 @@ export default function Login() {
     setBusy(true);
     setError(null);
     try {
-      if (isReal) await signInGoogle(); // เบราว์เซอร์จะถูกพาไปหน้า Google แล้วกลับมาที่หน้านี้
+      if (isReal) await signInGoogle(remember); // เบราว์เซอร์จะถูกพาไปหน้า Google แล้วกลับมาที่หน้านี้
       else await go('admin@example.com', 'google');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ');
@@ -76,6 +77,10 @@ export default function Login() {
           {!isReal && <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: 'var(--muted)', fontSize: 14 }}>
             <span style={{ flex: 1, height: 1, background: '#cfd9d3' }} />หรือ<span style={{ flex: 1, height: 1, background: '#cfd9d3' }} />
           </div>}
+          <label htmlFor="remember" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, cursor: 'pointer' }}>
+            <input id="remember" type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ width: 18, height: 18, accentColor: 'var(--brand)' }} />
+            จดจำการเข้าสู่ระบบ (ไม่ต้องล็อกอินซ้ำเมื่อกลับมาใหม่)
+          </label>
           <button className="btn" type="button" disabled={busy} onClick={() => void google()} style={{ height: 52, borderRadius: 14, fontSize: 16 }}>
             <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" /><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" /><path fill="#FBBC04" d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9z" /><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.8 9.4 6 12 6z" /></svg>
             เข้าสู่ระบบด้วย Google
