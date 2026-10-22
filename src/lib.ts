@@ -60,7 +60,7 @@ export const KIND_LABEL: Record<RowKind, string> = {
   below: 'ต่ำกว่าเกณฑ์',
   gate: 'ไม่ผ่าน Gate',
   pending: 'รอประมวลผล',
-  failed: 'ประมวลผลไม่สำเร็จ'
+  failed: 'สแกนล้มเหลว'
 };
 
 export const KIND_BAR: Record<RowKind, string> = {
@@ -111,7 +111,7 @@ export function itemNote(it: ApplicantItem, threshold: number): string {
     case 'pass': return 'ส่งต่อให้ HR พิจารณา';
     case 'below': return it.score !== null ? `ขาด ${(threshold - it.score).toFixed(1)} คะแนนถึงเกณฑ์` : '';
     case 'gate': return it.gate ? it.gate.replace('Failed: ', '') : '';
-    case 'failed': return it.candidate.processing_error ?? '';
+    case 'failed': return ''; // ข้อความ error เต็มดูได้จากปุ่ม ⓘ และหน้าสถานะระบบ
     default: return 'กำลังประมวลผล (ปกติ 1–2 นาที)';
   }
 }

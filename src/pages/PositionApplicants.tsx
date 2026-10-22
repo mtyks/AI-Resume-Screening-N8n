@@ -3,10 +3,10 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, type ApplicantItem, type ApplicantKind, type ApplicantSort } from '../api';
 import { KIND_BAR, KIND_LABEL, MAX_SKILL_CHIPS, STATUS_LABEL, downloadCsv, fmtShort, itemNote, useAsync } from '../lib';
 import { useStats } from '../stats';
-import { ErrorBox, Loading, PageHead, ScoreRing } from '../ui';
+import { ErrorBox, ErrorPeek, Loading, PageHead, ScoreRing } from '../ui';
 
 const KINDS: ['all' | ApplicantKind, string][] = [
-  ['all', 'ทั้งหมด'], ['pass', 'ผ่านเกณฑ์'], ['below', 'ต่ำกว่าเกณฑ์'], ['gate', 'ติด Gate'], ['pending', 'รอประมวลผล'], ['failed', 'ประมวลผลไม่สำเร็จ']
+  ['all', 'ทั้งหมด'], ['pass', 'ผ่านเกณฑ์'], ['below', 'ต่ำกว่าเกณฑ์'], ['gate', 'ติด Gate'], ['pending', 'รอประมวลผล'], ['failed', 'สแกนล้มเหลว']
 ];
 const SIZES = [25, 50, 100];
 const MAX_COMPARE = 3;
@@ -289,7 +289,10 @@ export default function PositionApplicants() {
                 ) : <span className="muted" style={{ fontSize: 14 }}>ยังไม่มีคะแนน</span>}
               </div>
               <div className="c-kind" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
-                <span className={`pill ${it.kind}`}>{KIND_LABEL[it.kind]}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span className={`pill ${it.kind}`}>{KIND_LABEL[it.kind]}</span>
+                  {it.kind === 'failed' && <ErrorPeek message={c.processing_error} align="right" />}
+                </span>
                 <span className="muted" style={{ fontSize: 12.5, lineHeight: 1.5 }}>{itemNote(it, stat?.match_threshold ?? 0)}</span>
               </div>
               <div className="c-act" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>

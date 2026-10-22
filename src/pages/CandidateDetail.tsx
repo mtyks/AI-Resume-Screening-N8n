@@ -5,7 +5,7 @@ import { useAuth } from '../auth';
 import type { Candidate, CriterionEval } from '../api';
 import { SCORE_NOTE, STATUS_LABEL, KIND_LABEL, expFlag, fmtShort, fmtStamp, rowKind, useAsync } from '../lib';
 import { useStats } from '../stats';
-import { ErrorBox, Loading } from '../ui';
+import { ErrorBox, ErrorPeek, Loading } from '../ui';
 
 // ต้องตรงกับ check constraint ของคอลัมน์ application_status ในฐานข้อมูล
 const STATUSES = ['In Review', 'Hired', 'Rejected'];
@@ -215,7 +215,7 @@ export default function CandidateDetail() {
 
       {c.processing_status !== 'processed' && (
         <div className={`alert ${c.processing_status === 'failed' ? 'err' : 'warn'}`} role="status">
-          {c.processing_status === 'failed' ? `ประมวลผลไม่สำเร็จ: ${c.processing_error ?? ''}` : 'ใบสมัครนี้อยู่ในคิว ยังไม่มีผลการประเมิน'}
+          {c.processing_status === 'failed' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>สแกนล้มเหลว <ErrorPeek message={c.processing_error} /></span> : 'ใบสมัครนี้อยู่ในคิว ยังไม่มีผลการประเมิน'}
           <div style={{ marginTop: 8 }}><button className="btn small" onClick={async () => { try { await api.retryCandidate(c.candidate_id); } catch (e) { window.alert(e instanceof Error ? e.message : 'สั่งสแกนซ้ำไม่สำเร็จ'); } data.reload(); }}>สแกนซ้ำ</button></div>
         </div>
       )}

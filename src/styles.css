@@ -276,3 +276,11 @@ textarea.input { padding: 12px 14px; }
 }
 .btn.danger { background: var(--danger-bar); border-color: var(--danger-bar); color: #fff; font-weight: 600; }
 .btn.danger:hover { background: #b9344b; border-color: #b9344b; color: #fff; }
+
+/* ปุ่ม ⓘ แสดงข้อความ error เต็ม */
+.errpeek { position: relative; display: inline-flex; }
+.errpeek-btn { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line, #c9d3cd); background: #fff; color: var(--danger-ink, #a33); font: 700 12px/1 var(--display, inherit); font-style: italic; cursor: pointer; padding: 0; }
+.errpeek-btn:hover, .errpeek-btn[aria-expanded="true"] { background: var(--danger-bg, #fdecea); }
+.errpeek-box { position: absolute; top: 28px; left: 0; z-index: 20; width: min(340px, 80vw); display: flex; flex-direction: column; gap: 8px; align-items: flex-start; padding: 12px 14px; background: #fff; border: 1px solid var(--line, #c9d3cd); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.14); font-size: 13.5px; line-height: 1.55; font-weight: 400; color: var(--ink, #222); }
+.errpeek-text { max-height: 200px; overflow: auto; width: 100%; overflow-wrap: anywhere; white-space: pre-wrap; font-family: var(--mono, monospace); font-size: 12.5px; background: var(--ground, #f4f6f5); padding: 8px 10px; border-radius: 8px; }
+.errpeek-box.right { left: auto; right: 0; }

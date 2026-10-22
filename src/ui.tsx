@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth';
 import { StatsProvider, useStats } from './stats';
@@ -64,6 +64,25 @@ function HrShell() {
 
 export function Loading({ text = 'กำลังโหลด…' }: { text?: string }) {
   return <div className="empty" role="status">{text}</div>;
+}
+
+/** ปุ่ม ⓘ เล็ก ๆ กดแล้วแสดงข้อความ error เต็ม ๆ (ในรายการแสดงแค่ "สแกนล้มเหลว") */
+export function ErrorPeek({ message, align = 'left' }: { message: string | null; align?: 'left' | 'right' }) {
+  const [open, setOpen] = useState(false);
+  const { session } = useAuth();
+  return (
+    <span className="errpeek ctl">
+      <button type="button" className="errpeek-btn" aria-expanded={open} aria-label="ดูข้อความ error เต็ม" title="ดูข้อความ error" onClick={() => setOpen((o) => !o)}>i</button>
+      {open && (
+        <span className={`errpeek-box${align === 'right' ? ' right' : ''}`} role="dialog" aria-label="ข้อความ error">
+          <b>ข้อความ error</b>
+          <span className="errpeek-text">{message?.trim() || 'ไม่มีข้อความ error บันทึกไว้'}</span>
+          <span className="muted" style={{ fontSize: 12.5 }}>{session?.role === 'Admin' ? 'ดูประวัติทั้งหมดได้ที่เมนู “สถานะระบบ”' : 'แจ้งผู้ดูแลระบบพร้อมรหัสผู้สมัคร เพื่อตรวจสอบใน log'}</span>
+          <button type="button" className="btn small" onClick={() => setOpen(false)}>ปิด</button>
+        </span>
+      )}
+    </span>
+  );
 }
 
 export function ErrorBox({ message }: { message: string }) {
