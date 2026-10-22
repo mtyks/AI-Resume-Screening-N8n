@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { api, isReal } from './api';
 import type { Role } from './api';
 
@@ -34,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // โหมดจริง: รอตรวจ session จาก Supabase ก่อนตัดสินว่าต้องเด้งไปหน้าเข้าสู่ระบบหรือไม่
   const [session, setSession] = useState<Session | null>(isReal ? null : readSession);
   const [ready, setReady] = useState(!isReal);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isReal) return;
@@ -53,11 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           /* ignore */
         }
         if (back) {
-          window.history.replaceState(null, '', window.location.pathname + (s ? '#/dashboard' : '#/login')); // ตัด ?code=… ออกด้วย
-          window.dispatchEvent(new HashChangeEvent('hashchange'));
+          window.history.replaceState(null, '', window.location.pathname + window.location.hash); // ตัด ?code=… ออกจาก URL
+          navigate(s ? '/dashboard' : '/login', { replace: true }); // HashRouter ฟังเฉพาะ popstate จึงต้องสั่งผ่าน router
         }
       })
       .finally(() => setReady(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ทำครั้งเดียวตอนเปิดหน้า
   }, []);
 
   const signInGoogle = useCallback(async () => {
