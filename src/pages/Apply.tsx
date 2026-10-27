@@ -22,6 +22,7 @@ export default function Apply() {
   const [file, setFile] = useState<File | null>(null);
   const [over, setOver] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [pdpaOpen, setPdpaOpen] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
@@ -207,8 +208,15 @@ export default function Apply() {
                 </label>
                 {errors.resume && <span className="err" role="alert" style={{ color: 'var(--danger-ink)', fontSize: 13.5, fontWeight: 500 }}>{errors.resume}</span>}
 
-                <div className="pdpa" role="region" aria-label="ประกาศความเป็นส่วนตัวสำหรับผู้สมัครงาน" tabIndex={0}>
-                  <h3>ประกาศความเป็นส่วนตัวสำหรับผู้สมัครงาน</h3>
+                <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', fontSize: 15, lineHeight: 1.6, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} aria-invalid={bad('consent')} style={{ width: 22, height: 22, margin: '2px 0 0', accentColor: 'var(--brand)', flex: '0 0 22px' }} />
+                  <span>ข้าพเจ้าได้อ่านและยอมรับ<button type="button" className="linkbtn" onClick={(e) => { e.preventDefault(); setPdpaOpen(true); }}>ประกาศความเป็นส่วนตัวสำหรับผู้สมัครงาน</button>และยินยอมให้บริษัทฯ เก็บรวบรวม ใช้ และประมวลผลข้อมูลส่วนบุคคลของข้าพเจ้าตามวัตถุประสงค์และระยะเวลาที่ระบุไว้</span>
+                </label>
+                {pdpaOpen && (
+                  <div className="modal-back" onClick={() => setPdpaOpen(false)}>
+                    <div className="modal pdpa" role="dialog" aria-modal="true" aria-labelledby="pdpa-t" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Escape') setPdpaOpen(false); }}>
+                      <h3 id="pdpa-t">ประกาศความเป็นส่วนตัวสำหรับผู้สมัครงาน</h3>
+                      <div className="pdpa-body">
                   <h4>1. ข้อมูลส่วนบุคคลที่เก็บรวบรวม</h4>
                   <p>เพื่อวัตถุประสงค์ในการพิจารณาคัดเลือกบุคลากร บริษัทฯ จะเก็บรวบรวมข้อมูลส่วนบุคคลของท่าน ดังนี้</p>
                   <ul>
@@ -232,11 +240,14 @@ export default function Apply() {
                   <p>บริษัทฯ กำหนดมาตรการเชิงเทคนิคและเชิงบริหารจัดการที่เหมาะสม เพื่อป้องกันการเข้าถึง การสูญหาย การทำลาย หรือการใช้ข้อมูลโดยไม่ได้รับอนุญาต โดยจำกัดสิทธิ์การเข้าถึงเฉพาะเจ้าหน้าที่ฝ่ายทรัพยากรบุคคล (HR) และผู้มีอำนาจหน้าที่ที่เกี่ยวข้องเท่านั้น</p>
                   <h4>5. สิทธิของเจ้าของข้อมูล</h4>
                   <p>ท่านมีสิทธิขอเข้าถึง แก้ไข ลบ หรือคัดค้านการประมวลผลข้อมูลของท่านได้ตามที่กฎหมายคุ้มครองข้อมูลส่วนบุคคลกำหนด โดยติดต่อฝ่ายทรัพยากรบุคคลของบริษัทฯ</p>
-                </div>
-                <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', fontSize: 15, lineHeight: 1.6, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} aria-invalid={bad('consent')} style={{ width: 22, height: 22, margin: '2px 0 0', accentColor: 'var(--brand)', flex: '0 0 22px' }} />
-                  <span>ข้าพเจ้าได้อ่านและเข้าใจประกาศความเป็นส่วนตัวข้างต้นแล้ว และยินยอมให้บริษัทฯ เก็บรวบรวม ใช้ และประมวลผลข้อมูลส่วนบุคคลของข้าพเจ้าตามวัตถุประสงค์และระยะเวลาที่ระบุไว้</span>
-                </label>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
+                        <button type="button" className="btn" autoFocus onClick={() => setPdpaOpen(false)}>ปิด</button>
+                        <button type="button" className="btn primary" onClick={() => { setConsent(true); setPdpaOpen(false); }}>อ่านแล้ว ยินยอม</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <Turnstile onToken={onToken} />
                 {errors.consent && <span className="err" role="alert" style={{ color: 'var(--danger-ink)', fontSize: 13.5, fontWeight: 500 }}>{errors.consent}</span>}
               </section>
