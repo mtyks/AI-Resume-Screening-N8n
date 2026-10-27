@@ -209,7 +209,7 @@ export default function Apply() {
 
                 <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', fontSize: 15, lineHeight: 1.6, cursor: 'pointer' }}>
                   <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} aria-invalid={bad('consent')} style={{ width: 22, height: 22, margin: '2px 0 0', accentColor: 'var(--brand)', flex: '0 0 22px' }} />
-                  <span>ฉันยินยอมให้เก็บและใช้ข้อมูลในใบสมัคร (ชื่อ เบอร์โทร อีเมล และ Resume) เพื่อการพิจารณาสมัครงาน โดยข้อมูลจะถูกเก็บไว้ไม่เกิน 90 วันนับจากวันสมัคร แล้วลบทิ้งอัตโนมัติ (ยกเว้นผู้ที่ได้รับเข้าทำงาน) และใช้ AI ช่วยอ่านเทียบทักษะกับตำแหน่ง รวมถึงส่งอีเมลแจ้งผลการพิจารณาให้ตามอีเมลที่ระบุ</span>
+                  <span>ฉันยินยอมให้เก็บและใช้ข้อมูลในใบสมัคร (ชื่อ เบอร์โทร อีเมล และ Resume) เพื่อการพิจารณาสมัครงานเท่านั้น โดยข้อมูลจะถูกเก็บไว้ไม่เกิน 90 วันนับจากวันสมัครก่อนระบบจะทำการลบทิ้งอัตโนมัติ (ยกเว้นผู้ที่ได้รับเข้าทำงาน) รวมถึงส่งอีเมลแจ้งผลการพิจารณาให้ตามอีเมลที่ระบุ</span>
                 </label>
                 <Turnstile onToken={onToken} />
                 {errors.consent && <span className="err" role="alert" style={{ color: 'var(--danger-ink)', fontSize: 13.5, fontWeight: 500 }}>{errors.consent}</span>}
