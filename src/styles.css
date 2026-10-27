@@ -286,9 +286,9 @@ textarea.input { padding: 12px 14px; }
 .errpeek-box.right { left: auto; right: 0; }
 
 /* ---- Dashboard ---- */
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
-.seg button { border: 0; background: transparent; padding: 10px 14px; font: inherit; font-size: 14px; cursor: pointer; color: var(--muted); }
-.seg button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+.segbtn { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
+.segbtn button { border: 0; background: transparent; padding: 10px 14px; font: inherit; font-size: 14px; cursor: pointer; color: var(--muted); }
+.segbtn button[aria-pressed="true"] { background: var(--brand); color: #fff; }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 .kpi { display: flex; flex-direction: column; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-md); padding: 18px 20px; text-decoration: none; color: inherit; transition: border-color .15s; }
 .kpi:hover { border-color: var(--brand); }

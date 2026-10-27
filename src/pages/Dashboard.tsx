@@ -101,7 +101,7 @@ export default function Dashboard() {
   return (
     <main className="page">
       <PageHead title="ภาพรวม" sub="สิ่งที่ต้องทำก่อน และสุขภาพของแต่ละตำแหน่ง">
-        <div className="seg" role="group" aria-label="ขอบเขตตำแหน่ง">
+        <div className="segbtn" role="group" aria-label="ขอบเขตตำแหน่ง">
           <button type="button" aria-pressed={scope === 'open'} onClick={() => setScope('open')}>ตำแหน่งที่เปิดรับ</button>
           <button type="button" aria-pressed={scope === 'all'} onClick={() => setScope('all')}>ทั้งหมด</button>
         </div>
