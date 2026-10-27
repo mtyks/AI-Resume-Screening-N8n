@@ -217,8 +217,16 @@ export const supabaseApi: Api = {
     return { candidate, match, job, logs };
   },
 
-  async setApplicationStatus(id, status) {
-    ok(await sb().from('candidates').update({ application_status: status }).eq('candidate_id', id));
+  async setApplicationStatus(id, status, notify = true) {
+    const changed = Boolean(ok(await sb().rpc('set_application_status', { p_candidate_id: id, p_status: status, p_notify: notify })));
+    return { changed, queued: changed && notify };
+  },
+
+  async pipelineHealth() {
+    try {
+      const rows = ok(await sb().rpc('pipeline_health')) as { stuck: number; oldest_minutes: number }[] | null;
+      return rows?.[0] ?? { stuck: 0, oldest_minutes: 0 };
+    } catch { return { stuck: 0, oldest_minutes: 0 }; }
   },
 
   async retryCandidate(id) {

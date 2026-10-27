@@ -531,11 +531,18 @@ export const mockApi: Api = {
     };
   },
 
-  async setApplicationStatus(candidateId, status) {
+  async setApplicationStatus(candidateId, status, notify = true) {
     await sleep(NET / 2);
     const c = store.candidates.find((x) => x.candidate_id === candidateId);
-    if (c) c.application_status = status;
+    if (!c || c.application_status === status) return { changed: false, queued: false };
+    c.application_status = status;
     persist();
+    return { changed: true, queued: notify && Boolean(c.email) };
+  },
+
+  async pipelineHealth() {
+    await sleep(NET / 4);
+    return { stuck: 0, oldest_minutes: 0 };
   },
 
   async getResumeUrl(candidate) {

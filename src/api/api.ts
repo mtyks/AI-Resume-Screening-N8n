@@ -51,7 +51,10 @@ export interface Api {
   /** ลบผู้สมัครที่อ่านแล้วของตำแหน่งนี้ถาวร (รวมไฟล์ Resume) คืนจำนวนที่ลบ */
   deleteReadCandidates(jobId: string): Promise<number>;
   getCandidate(candidateId: string): Promise<{ candidate: Candidate; match: MatchResult | null; job: Job | null; logs: SystemLog[] } | null>;
-  setApplicationStatus(candidateId: string, status: string): Promise<void>;
+  /** เปลี่ยนสถานะการพิจารณา; notify=true จะส่งอีเมลแจ้งผู้สมัครอัตโนมัติ คืน queued=true ถ้าเข้าคิวส่งอีเมลแล้ว */
+  setApplicationStatus(candidateId: string, status: string, notify?: boolean): Promise<{ changed: boolean; queued: boolean }>;
+  /** จำนวนผู้สมัครที่ค้างรอประมวลผลนานผิดปกติ (n8n อาจหยุดทำงาน) */
+  pipelineHealth(): Promise<{ stuck: number; oldest_minutes: number }>;
   retryCandidate(candidateId: string): Promise<void>;
   /** ลิงก์ชั่วคราวสำหรับเปิดไฟล์ Resume (bucket เป็น private) */
   /** สแกนซ้ำหลายคน (ทุกสถานะ) คืนจำนวนที่ส่งเข้าคิว */

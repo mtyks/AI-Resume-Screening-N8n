@@ -83,6 +83,10 @@ export default function PositionApplicants() {
     return () => clearInterval(t);
   }, [hasPending, reloadStats]);
 
+  // ตรวจว่ามีคนค้างรอนานผิดปกติ (เกิน 15 นาที) หรือไม่ = n8n อาจไม่ทำงาน
+  const health = useAsync(() => (hasPending ? api.pipelineHealth() : Promise.resolve({ stuck: 0, oldest_minutes: 0 })), [hasPending, version]);
+  const stuck = health.data?.stuck ?? 0;
+
   function toggleSel(it: ApplicantItem) {
     setSelected((m) => {
       const n = new Map(m);
@@ -215,6 +219,7 @@ export default function PositionApplicants() {
             </>}
         </div>
       )}
+      {stuck > 0 && <div role="alert" className="alert err">ระบบประมวลผลหยุดชะงัก: มี {stuck} คนรอนานเกิน 15 นาที (ตรวจว่าเครื่องที่รัน n8n และ ngrok ยังเปิดอยู่) เมื่อระบบกลับมาทำงาน ระบบจะประมวลผลต่อเองโดยไม่ต้องสมัครใหม่</div>}
       {notice && <div role="status" className={`alert ${notice.ok ? 'ok' : 'err'}`}>{notice.text}</div>}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
@@ -281,22 +286,22 @@ export default function PositionApplicants() {
                 <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>ประสบการณ์ที่แจ้ง: {c.self_reported_experience_range ?? 'ไม่ระบุ'}</div>
               </div>
               <div className="c-score">
-                {it.score !== null && c.processing_status === 'processed' ? (
+                {it.score !== null && (c.processing_status === 'processed' || it.kind === 'pending') ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <ScoreRing value={it.score} color={KIND_BAR[it.kind]} size={52} />
-                    <div><div style={{ fontSize: 13.5, fontWeight: 500 }}>{it.score.toFixed(1)} / 100</div><div className="muted" style={{ fontSize: 12.5 }}>เกณฑ์ {stat?.match_threshold}</div></div>
+                    <div><div style={{ fontSize: 13.5, fontWeight: 500 }}>{it.score.toFixed(1)} / 100</div><div className="muted" style={{ fontSize: 12.5 }}>{it.kind === 'pending' ? 'ผลเดิม' : `เกณฑ์ ${stat?.match_threshold}`}</div></div>
                   </div>
                 ) : <span className="muted" style={{ fontSize: 14 }}>ยังไม่มีคะแนน</span>}
               </div>
               <div className="c-kind" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <span className={`pill ${it.kind}`}>{KIND_LABEL[it.kind]}</span>
+                  <span className={`pill ${it.kind}`}>{it.kind === 'pending' && it.score !== null ? 'กำลังสแกนซ้ำ' : KIND_LABEL[it.kind]}</span>
                   {it.kind === 'failed' && <ErrorPeek message={c.processing_error} align="right" />}
                 </span>
                 <span className="muted" style={{ fontSize: 12.5, lineHeight: 1.5 }}>{itemNote(it, stat?.match_threshold ?? 0)}</span>
               </div>
               <div className="c-act" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                {it.kind !== 'failed' && it.kind !== 'pending' && <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--brand)' }}>ดูรายละเอียด →</span>}
+                {it.kind !== 'failed' && (it.kind !== 'pending' || it.score !== null) && <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--brand)' }}>ดูรายละเอียด →</span>}
                 {it.kind !== 'pending' && <button className="btn small ctl" type="button" title="ให้ระบบอ่าน Resume และคิดคะแนนใหม่" onClick={() => void rescan([c.candidate_id])}>สแกนซ้ำ</button>}
               </div>
             </div>

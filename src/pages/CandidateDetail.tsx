@@ -112,7 +112,8 @@ function NoteCard({ c, onSaved }: { c: Candidate; onSaved: () => void }) {
 export default function CandidateDetail() {
   const { id = '' } = useParams();
   const data = useAsync(() => api.getCandidate(id), [id]);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState<string | null>(null);
+  const [notify, setNotify] = useState(true);
   const [opening, setOpening] = useState(false);
   const [resumeErr, setResumeErr] = useState<string | null>(null);
   const { session } = useAuth();
@@ -195,10 +196,22 @@ export default function CandidateDetail() {
           <div className="field" style={{ minWidth: 190 }}>
             <label htmlFor="st" className="muted" style={{ fontSize: 13.5 }}>สถานะการพิจารณา</label>
             <select id="st" className="select" style={{ height: 44 }} value={c.application_status}
-              onChange={async (e) => { await api.setApplicationStatus(c.candidate_id, e.target.value); setSaved(true); data.reload(); }}>
+              onChange={async (e) => {
+                const next = e.target.value;
+                const mail = notify && Boolean(c.email);
+                if (mail && !window.confirm(`เปลี่ยนสถานะเป็น "${STATUS_LABEL[next] ?? next}" และส่งอีเมลแจ้ง ${c.email} ?`)) return;
+                try {
+                  const r = await api.setApplicationStatus(c.candidate_id, next, mail);
+                  setSaved(r.queued ? 'บันทึกแล้ว และส่งอีเมลแจ้งผู้สมัครเข้าคิวแล้ว (ส่งภายใน ~5 นาที)' : 'บันทึกสถานะแล้ว');
+                } catch (err) { setSaved(err instanceof Error ? err.message : 'บันทึกสถานะไม่สำเร็จ'); }
+                data.reload();
+              }}>
               {[...new Set([c.application_status, ...STATUSES])].map((s) => <option key={s} value={s}>{STATUS_LABEL[s] ?? s}</option>)}
             </select>
-            {saved && <span className="hint" role="status">บันทึกสถานะแล้ว</span>}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5 }}>
+              <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} /> แจ้งผู้สมัครทางอีเมล
+            </label>
+            {saved && <span className="hint" role="status">{saved}</span>}
           </div>
         </div>
       </section>

@@ -121,7 +121,7 @@ export function itemNote(it: ApplicantItem, threshold: number): string {
     case 'below': return it.score !== null ? `ขาด ${(threshold - it.score).toFixed(1)} คะแนนถึงเกณฑ์` : '';
     case 'gate': return it.gate ? it.gate.replace('Failed: ', '') : '';
     case 'failed': return ''; // ข้อความ error เต็มดูได้จากปุ่ม ⓘ และหน้าสถานะระบบ
-    default: return 'กำลังประมวลผล (ปกติ 1–2 นาที)';
+    default: return it.score !== null ? 'กำลังคิดคะแนนใหม่ แสดงผลเดิมไว้ก่อน' : 'กำลังประมวลผล (ปกติ 1–2 นาที)';
   }
 }
 
