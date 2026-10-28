@@ -104,12 +104,27 @@ export function expFlag(c: Candidate, job: Job): ExpFlag {
   return { level: 'ok', label: `ตรงเกณฑ์ประสบการณ์ที่แจ้ง (≥ ${job.min_experience_years} ปี)` };
 }
 
-/** ป้ายสถานะการสมัครที่ HR เห็น (ค่าที่เก็บใน DB ยังเป็น In Review / Hired / Rejected ตาม check constraint) */
+/** ป้ายสถานะการสมัครที่ HR เห็น (ค่าที่เก็บใน DB: In Review / Interview / Offer / Hired / Rejected) */
 export const STATUS_LABEL: Record<string, string> = {
   'In Review': 'กำลังพิจารณา',
+  Interview: 'นัดสัมภาษณ์',
+  Offer: 'ยื่นข้อเสนอ',
   Hired: 'รับเข้าทำงาน',
   Rejected: 'ไม่รับ'
 };
+
+/** ลำดับสถานะในเมนูเลือก */
+export const STATUS_ORDER = ['In Review', 'Interview', 'Offer', 'Hired', 'Rejected'];
+
+/** ตัวเลือก "รู้จักตำแหน่งนี้จากที่ไหน" (ต้องตรงกับ Edge Function) */
+export const SOURCE_OPTIONS = ['Facebook', 'LinkedIn', 'JobsDB', 'JobThai', 'เว็บไซต์บริษัท', 'คนรู้จักแนะนำ', 'มหาวิทยาลัย/สถาบันการศึกษา', 'อื่น ๆ'];
+
+/** ลิงก์สมัครเฉพาะช่องทาง: ?src=facebook ฯลฯ (ไม่สนตัวพิมพ์เล็ก/ใหญ่) */
+export function sourceFromParam(v: string | null): string {
+  if (!v) return '';
+  const k = v.trim().toLowerCase();
+  return SOURCE_OPTIONS.find((o) => o.toLowerCase() === k) ?? '';
+}
 
 /** จำนวนทักษะที่แสดงในแถวผู้สมัคร ส่วนที่เหลือรวมเป็น "+N" (ดูครบในหน้ารายละเอียด) */
 export const MAX_SKILL_CHIPS = 3;

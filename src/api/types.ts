@@ -55,6 +55,8 @@ export interface Candidate {
   hr_note: string | null;
   hr_note_at?: string | null;
   hr_note_by?: string | null;
+  /** ช่องทางที่ผู้สมัครทราบข่าว (ผู้สมัครเลือกเอง หรือมาจากลิงก์ ?src=) */
+  source?: string | null;
 }
 
 export interface CriterionEval {
@@ -123,6 +125,8 @@ export interface ApplicationInput {
   resume: File;
   /** โทเคนจาก Cloudflare Turnstile (มีเมื่อตั้งค่า VITE_TURNSTILE_SITE_KEY) */
   turnstileToken?: string;
+  /** ช่องทางที่ทราบข่าวการรับสมัคร (ไม่บังคับ) */
+  source?: string;
 }
 
 export type SubmitResult =
@@ -192,7 +196,8 @@ export interface DashboardSummary {
   prev_avg_score: number | null;
   /** เวลามัธยฐานตั้งแต่ใบสมัครเข้าระบบจนสแกนเสร็จครั้งแรก (นาที) */
   median_minutes: number | null;
-  funnel: { applied: number; scanned: number; passed: number; hired: number; rejected: number };
+  funnel: { applied: number; scanned: number; passed: number; interview: number; offer: number; hired: number; rejected: number };
+  sources: { name: string; n: number }[];
   inflow: { d: string; n: number }[];
   skills: { name: string; n: number }[];
   buckets: number[];

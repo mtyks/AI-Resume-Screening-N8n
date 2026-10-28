@@ -341,6 +341,7 @@ const auditLocal: AuditEntry[] = [
   { id: 2, at: new Date(Date.now() - 7200e3).toISOString(), actor: 'hr@example.com', action: 'export_csv', target: 'Automation Developer', detail: { rows: 46 } },
   { id: 1, at: new Date(Date.now() - 86400e3).toISOString(), actor: 'ระบบอัตโนมัติ', action: 'candidate_removed', target: 'C10000002', detail: null }
 ];
+const DEMO_SOURCES = ['Facebook', 'JobsDB', 'LinkedIn', 'คนรู้จักแนะนำ', 'เว็บไซต์บริษัท']; // เฉพาะโหมดทดลอง
 const NET = 220; // หน่วงเวลาเล็กน้อยให้เหมือนเรียกเครือข่ายจริง
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
@@ -390,7 +391,8 @@ export const mockApi: Api = {
       processing_error: null,
       is_read: false,
       starred: false,
-      hr_note: null
+      hr_note: null,
+      source: input.source ?? null
     });
     addLog(id, 'Success', 'รับใบสมัครแล้ว รอประมวลผล Resume');
     persist();
@@ -496,9 +498,12 @@ export const mockApi: Api = {
       funnel: {
         applied: cur.length, scanned: cur.filter((c) => c.processing_status === 'processed').length,
         passed: lc.filter((x) => x.m.gate_status === 'Pass' && x.m.match_score >= x.j.match_threshold).length,
+        interview: cur.filter((c) => ['Interview', 'Offer', 'Hired'].includes(c.application_status)).length,
+        offer: cur.filter((c) => ['Offer', 'Hired'].includes(c.application_status)).length,
         hired: cur.filter((c) => c.application_status === 'Hired').length, rejected: cur.filter((c) => c.application_status === 'Rejected').length
       },
-      inflow, skills, buckets
+      inflow, skills, buckets,
+      sources: [...cur.reduce((m, c) => { const k = c.source || DEMO_SOURCES[[...c.candidate_id].reduce((a, ch) => a + ch.charCodeAt(0), 0) % DEMO_SOURCES.length]; return m.set(k, (m.get(k) ?? 0) + 1); }, new Map<string, number>())].map(([name, n]) => ({ name, n })).sort((a, b) => b.n - a.n)
     };
   },
 

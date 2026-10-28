@@ -34,13 +34,13 @@ export function InflowChart({ data }: { data: DashboardSummary['inflow'] }) {
 }
 
 /** กราฟแท่งแนวนอน ทักษะที่พบบ่อยที่สุด */
-export function SkillsChart({ data, total }: { data: DashboardSummary['skills']; total: number }) {
-  if (data.length === 0) return <div className="chart-empty static">ยังไม่มีข้อมูลทักษะในช่วงเวลานี้</div>;
+export function SkillsChart({ data, total, empty = 'ยังไม่มีข้อมูลทักษะในช่วงเวลานี้', unit = 'ผู้สมัคร' }: { data: DashboardSummary['skills']; total: number; empty?: string; unit?: string }) {
+  if (data.length === 0) return <div className="chart-empty static">{empty}</div>;
   const max = Math.max(1, ...data.map((s) => s.n));
   return (
     <ol className="hbars">
       {data.map((s) => (
-        <li key={s.name} title={`${s.name}: ${s.n} คน${total ? ` (${Math.round((s.n / total) * 100)}% ของผู้สมัคร)` : ''}`}>
+        <li key={s.name} title={`${s.name}: ${s.n} คน${total ? ` (${Math.round((s.n / total) * 100)}% ของ${unit})` : ''}`}>
           <span className="nm">{s.name}</span>
           <span className="track"><span style={{ width: `${(s.n / max) * 100}%` }} /></span>
           <span className="n">{s.n}</span>
@@ -50,11 +50,12 @@ export function SkillsChart({ data, total }: { data: DashboardSummary['skills'];
   );
 }
 
-/** Funnel: สมัคร → สแกนแล้ว → ผ่านเกณฑ์ → รับเข้าทำงาน พร้อมอัตราที่หายไปในแต่ละขั้น */
+/** Funnel: สมัคร → สแกนแล้ว → ผ่านเกณฑ์ → สัมภาษณ์ → ข้อเสนอ → รับเข้าทำงาน พร้อมอัตราที่หายไปในแต่ละขั้น */
 export function Funnel({ f }: { f: DashboardSummary['funnel'] }) {
   const stages: [string, number, string][] = [
     ['สมัครทั้งหมด', f.applied, 'var(--brand)'], ['สแกนเสร็จแล้ว', f.scanned, 'var(--brand)'],
-    ['ผ่านเกณฑ์', f.passed, 'var(--accent)'], ['รับเข้าทำงาน', f.hired, 'var(--accent)']
+    ['ผ่านเกณฑ์', f.passed, 'var(--accent)'], ['นัดสัมภาษณ์', f.interview, 'var(--accent)'],
+    ['ยื่นข้อเสนอ', f.offer, 'var(--accent)'], ['รับเข้าทำงาน', f.hired, 'var(--accent)']
   ];
   const base = Math.max(1, f.applied);
   return (
@@ -64,7 +65,7 @@ export function Funnel({ f }: { f: DashboardSummary['funnel'] }) {
         const drop = prev && prev > 0 ? Math.round(((prev - n) / prev) * 100) : null;
         return (
           <div className="fstage" key={label}>
-            <div className="fbar" style={{ width: `${Math.max(n ? 6 : 0, (n / base) * 100)}%`, background: color, opacity: 1 - i * 0.12 }} />
+            <div className="fbar" style={{ width: `${Math.max(n ? 6 : 0, (n / base) * 100)}%`, background: color, opacity: 1 - i * 0.1 }} />
             <div className="ftxt"><b>{n}</b> {label}{drop !== null && drop > 0 && <span className="fdrop">หายไป {drop}%</span>}</div>
           </div>
         );

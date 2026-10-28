@@ -22,6 +22,12 @@ const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { sta
 
 const EXPERIENCE = ['ไม่มีประสบการณ์ (นักศึกษาจบใหม่)', '1-3 ปี', '3-5 ปี', 'มากกว่า 5 ปี'];
 const MAX_BYTES = 5 * 1024 * 1024;
+// ช่องทางที่ผู้สมัครทราบข่าว (ต้องตรงกับตัวเลือกในหน้าสมัคร) ค่าอื่นจะถูกเก็บเป็น 'อื่น ๆ'
+const SOURCES = ['Facebook', 'LinkedIn', 'JobsDB', 'JobThai', 'เว็บไซต์บริษัท', 'คนรู้จักแนะนำ', 'มหาวิทยาลัย/สถาบันการศึกษา', 'อื่น ๆ'];
+const cleanSource = (v: FormDataEntryValue | null): string | null => {
+  const t = typeof v === 'string' ? v.trim() : '';
+  return !t ? null : SOURCES.includes(t) ? t : 'อื่น ๆ';
+};
 
 // ไฟล์ PDF จริงต้องขึ้นต้นด้วย "%PDF-" (กันการเปลี่ยนนามสกุล/ประเภทไฟล์อื่นให้ดูเป็น PDF)
 async function looksLikePdf(file: File): Promise<boolean> {
@@ -90,6 +96,14 @@ Deno.serve(async (req) => {
       // 2xx/4xx = n8n ตัดสินแล้ว (รับ/ซ้ำ/ข้อมูลไม่ถูก) ส่งต่อผลตามนั้น
       if (res.status < 500) {
         const body = await res.text();
+        // บันทึกแหล่งที่มาหลัง n8n รับใบสมัครแล้ว (ไม่ต้องแก้ workflow ของ n8n) ถ้าบันทึกไม่ได้ไม่กระทบการสมัคร
+        const src = cleanSource(form.get('source'));
+        if (src && res.status < 300) {
+          try {
+            const id = (JSON.parse(body) as { candidate_id?: string }).candidate_id;
+            if (id) await rl.from('candidates').update({ source: src }).eq('candidate_id', id).is('source', null);
+          } catch (_) { /* ignore */ }
+        }
         return new Response(body, { status: res.status, headers: { ...CORS, 'Content-Type': 'application/json' } });
       }
     } catch (_) { /* n8n ไม่ตอบ -> ไปเก็บคิวด้านล่าง */ }
@@ -120,7 +134,7 @@ Deno.serve(async (req) => {
 
   const candidate_id = 'C' + Date.now().toString().slice(-8) + String(Math.floor(Math.random() * 100)).padStart(2, '0');
   const ins = await sb.from('candidates').insert({
-    candidate_id, ...rec,
+    candidate_id, ...rec, source: cleanSource(form.get('source')),
     resume_file_url: `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/resumes/${path}`,
     processing_status: 'pending'
   });

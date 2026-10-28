@@ -84,3 +84,9 @@ npm run dev              # http://localhost:5173
 - จำนวน **ยังไม่อ่าน** แสดงที่เมนู หน้าภาพรวม และการ์ดตำแหน่ง
 - **อีเมลสรุปรายสัปดาห์** ทุกวันจันทร์ 09:00 ถึง HR/Admin ทุกคน: ตำแหน่ง · สมัครใหม่ใน 7 วัน · สมัครทั้งหมด · ยังไม่อ่าน (n8n workflow `Resume-Screening-Weekly-Summary`, migration `20261022c_weekly_summary.sql`)
 - ลำดับ migration: `20261022_applicants_features.sql` แล้วตามด้วย `20261022b_delete_read_candidates.sql`
+
+## ลิงก์สมัครแยกตามช่องทาง (วัดแหล่งที่มาของผู้สมัคร)
+เติม `?src=` ท้ายลิงก์หน้าสมัคร ระบบจะเลือก "ทราบข่าวจาก" ให้อัตโนมัติ เช่น
+`https://<เว็บของคุณ>/#/?src=facebook` · `?src=linkedin` · `?src=jobsdb` · `?src=jobthai`
+ค่าที่รองรับ: Facebook, LinkedIn, JobsDB, JobThai, เว็บไซต์บริษัท, คนรู้จักแนะนำ, มหาวิทยาลัย/สถาบันการศึกษา, อื่น ๆ
+ผู้สมัครเปลี่ยนตัวเลือกเองได้ ดูสัดส่วนได้ที่ Dashboard

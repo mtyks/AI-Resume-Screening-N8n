@@ -67,6 +67,7 @@ export const supabaseApi: Api = {
     fd.set('email', input.email);
     fd.set('applied_position', input.applied_position);
     if (input.self_reported_experience_range) fd.set('self_reported_experience_range', input.self_reported_experience_range);
+    if (input.source) fd.set('source', input.source);
     fd.set('resume', input.resume);
     fd.set('consent', 'true'); // ฟอร์มบังคับติ๊กยินยอมก่อนส่ง Edge Function ตรวจซ้ำอีกชั้น
     if (input.turnstileToken) fd.set('cf-turnstile-response', input.turnstileToken);
@@ -142,8 +143,9 @@ export const supabaseApi: Api = {
     return {
       days: Number(r.days), active_openings: Number(r.active_openings), total: Number(r.total), prev_total: Number(r.prev_total),
       avg_score: n(r.avg_score), prev_avg_score: n(r.prev_avg_score), median_minutes: n(r.median_minutes),
-      funnel: { applied: Number(f.applied ?? 0), scanned: Number(f.scanned ?? 0), passed: Number(f.passed ?? 0), hired: Number(f.hired ?? 0), rejected: Number(f.rejected ?? 0) },
+      funnel: { applied: Number(f.applied ?? 0), scanned: Number(f.scanned ?? 0), passed: Number(f.passed ?? 0), interview: Number(f.interview ?? 0), offer: Number(f.offer ?? 0), hired: Number(f.hired ?? 0), rejected: Number(f.rejected ?? 0) },
       inflow: ((r.inflow as { d: string; n: number }[] | null) ?? []).map((x) => ({ d: String(x.d), n: Number(x.n) })),
+      sources: ((r.sources as { name: string; n: number }[] | null) ?? []).map((x) => ({ name: String(x.name), n: Number(x.n) })),
       skills: ((r.skills as { name: string; n: number }[] | null) ?? []).map((x) => ({ name: String(x.name), n: Number(x.n) })),
       buckets: ((r.buckets as number[] | null) ?? []).map(Number)
     };

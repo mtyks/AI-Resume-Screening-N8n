@@ -161,11 +161,15 @@ export default function Dashboard() {
             <section className="card dcard">
               <div className="dash-sum-head"><h2>สถานะการสรรหา (Funnel)</h2></div>
               <Funnel f={d.funnel} />
-              <p className="muted fhint">ระบบยังไม่มีสถานะ "นัดสัมภาษณ์/Offer" จึงแสดงถึงขั้นรับเข้าทำงาน</p>
+              <p className="muted fhint">ขั้นสัมภาษณ์/ข้อเสนอ นับจากสถานะที่ HR ตั้งในหน้าผู้สมัคร</p>
             </section>
             <section className="card dcard">
               <div className="dash-sum-head"><h2>การกระจายคะแนนจับคู่</h2></div>
               <ScoreSpread buckets={d.buckets} />
+            </section>
+            <section className="card dcard span2">
+              <div className="dash-sum-head"><h2>แหล่งที่มาของผู้สมัคร</h2><span className="muted">ผู้สมัครทราบข่าวจากช่องทางใด</span></div>
+              <SkillsChart data={d.sources} total={d.total} empty="ยังไม่มีข้อมูลแหล่งที่มาในช่วงเวลานี้" unit="ผู้สมัครทั้งหมด" />
             </section>
             <section className="card dcard span2">
               <div className="dash-sum-head"><h2>ทักษะที่พบบ่อยที่สุด</h2><span className="muted">จำนวนผู้สมัครที่พบทักษะนั้น</span></div>

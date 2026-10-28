@@ -3,12 +3,12 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 import { api } from '../api';
 import { useAuth } from '../auth';
 import type { Candidate, CriterionEval } from '../api';
-import { SCORE_NOTE, STATUS_LABEL, KIND_LABEL, expFlag, fmtShort, fmtStamp, mustAvg, rowKind, useAsync } from '../lib';
+import { SCORE_NOTE, STATUS_LABEL, STATUS_ORDER, KIND_LABEL, expFlag, fmtShort, fmtStamp, mustAvg, rowKind, useAsync } from '../lib';
 import { useStats } from '../stats';
 import { ErrorBox, ErrorPeek, Loading } from '../ui';
 
 // ต้องตรงกับ check constraint ของคอลัมน์ application_status ในฐานข้อมูล
-const STATUSES = ['In Review', 'Hired', 'Rejected'];
+const STATUSES = STATUS_ORDER;
 const EXP = ['ไม่มีประสบการณ์ (นักศึกษาจบใหม่)', '1-3 ปี', '3-5 ปี', 'มากกว่า 5 ปี'];
 
 function Criteria({ title, items }: { title: string; items: CriterionEval[] }) {
@@ -184,7 +184,7 @@ export default function CandidateDetail() {
           <div className="muted" style={{ marginTop: 8, fontSize: 14.5, display: 'flex', flexWrap: 'wrap', gap: '6px 20px' }}>
             <span className="mono">{c.candidate_id}</span><span>สมัครตำแหน่ง {c.applied_position}</span><span>ส่งเมื่อ {fmtShort(c.received_at)}</span>
           </div>
-          <div style={{ marginTop: 10, fontSize: 14.5, display: 'flex', flexWrap: 'wrap', gap: '6px 24px' }}><span>{c.email}</span><span>{c.phone_number}</span></div>
+          <div style={{ marginTop: 10, fontSize: 14.5, display: 'flex', flexWrap: 'wrap', gap: '6px 24px' }}><span>{c.email}</span><span>{c.phone_number}</span>{c.source && <span className="muted">ทราบข่าวจาก: {c.source}</span>}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
           {m && (

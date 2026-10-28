@@ -1,8 +1,8 @@
 import { useCallback, useState, type DragEvent, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import type { SubmitResult } from '../api';
-import { useAsync } from '../lib';
+import { SOURCE_OPTIONS, sourceFromParam, useAsync } from '../lib';
 import { Mark, ResumeArt } from '../ui';
 import { Turnstile, TURNSTILE_SITE_KEY } from '../turnstile';
 
@@ -16,9 +16,11 @@ const SEARCH_FROM = 6;
 const STEPS = ['เลือกตำแหน่งและกรอกข้อมูล แนบ Resume เป็นไฟล์ PDF', 'ระบบอ่าน Resume แล้วเทียบกับทักษะที่ตำแหน่งต้องการ', 'ฝ่ายบุคคลดูผลและติดต่อกลับทางอีเมลหรือเบอร์โทร'];
 
 export default function Apply() {
+  const [qs] = useSearchParams();
   const jobs = useAsync(() => api.listOpenPositions(), []);
   const [form, setForm] = useState({ full_name: '', phone_number: '', email: '', applied_position: '' });
   const [exp, setExp] = useState<string | null>(null);
+  const [source, setSource] = useState<string>(() => sourceFromParam(qs.get('src')));
   const [file, setFile] = useState<File | null>(null);
   const [over, setOver] = useState(false);
   const [consent, setConsent] = useState(false);
@@ -59,7 +61,7 @@ export default function Apply() {
     }
     setBusy(true);
     try {
-      setResult(await api.submitApplication({ ...form, self_reported_experience_range: exp, resume: file, turnstileToken: tsToken || undefined }));
+      setResult(await api.submitApplication({ ...form, self_reported_experience_range: exp, resume: file, turnstileToken: tsToken || undefined, source: source || undefined }));
     } catch {
       setResult({ status: 'error', message: 'ระบบขัดข้องชั่วคราว' });
     } finally {
@@ -173,6 +175,14 @@ export default function Apply() {
                   </div>
                   {errors.exp && <span className="err" role="alert">{errors.exp}</span>}
                 </div>
+
+                <div className="field">
+                  <label htmlFor="source" className="label">คุณทราบข่าวการรับสมัครนี้จากที่ไหน <span className="muted" style={{ fontWeight: 400 }}>(ไม่บังคับ)</span></label>
+                  <select id="source" className="select" value={source} onChange={(e) => setSource(e.target.value)}>
+                    <option value="">ไม่ระบุ</option>
+                    {SOURCE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
               </section>
 
               <section style={{ display: 'flex', flexDirection: 'column', gap: 20 }} aria-labelledby="s2">
@@ -222,6 +232,7 @@ export default function Apply() {
                   <ul>
                     <li><b>ข้อมูลระบุตัวตนและข้อมูลติดต่อ:</b> ชื่อ-นามสกุล อีเมล และหมายเลขโทรศัพท์</li>
                     <li><b>ข้อมูลประวัติการศึกษาและการทำงาน (Resume/CV):</b> ประวัติการศึกษา ประวัติการทำงาน ทักษะความสามารถ ผลงาน และเอกสารประกอบการสมัครงานที่ท่านอัปโหลดเข้าสู่ระบบ</li>
+                    <li><b>ช่องทางที่ทราบข่าวการรับสมัคร:</b> เฉพาะกรณีที่ท่านเลือกระบุ เพื่อใช้ประเมินช่องทางประชาสัมพันธ์</li>
                     <li><b>ข้อมูลการติดต่อสื่อสาร:</b> อีเมลหรือข้อมูลการติดต่อระหว่างท่านกับบริษัทฯ ในกระบวนการสรรหา รวมถึงการแจ้งผลการพิจารณา</li>
                   </ul>
                   <h4>2. วัตถุประสงค์ในการเก็บรวบรวมและประมวลผล</h4>
