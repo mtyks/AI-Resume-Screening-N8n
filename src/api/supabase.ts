@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Api } from './api';
 import type {
   ApplicantItem, ApplicantPage, ApplicationInput, AuthorizedUser, Candidate, Job, MatchResult,
-  AuditEntry, OpenPosition, PositionStat, Role, SubmitResult, SystemConfig, SystemLog
+  AuditEntry, DashboardSummary, OpenPosition, PositionStat, Role, SubmitResult, SystemConfig, SystemLog
 } from './types';
 
 const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -133,6 +133,20 @@ export const supabaseApi: Api = {
       avg_score: r.avg_score === null || r.avg_score === undefined ? null : Number(r.avg_score),
       buckets: ((r.buckets as number[] | null) ?? []).map(Number)
     }));
+  },
+
+  async dashboardSummary(jobId, days): Promise<DashboardSummary> {
+    const r = ok(await sb().rpc('dashboard_summary', { p_job: jobId, p_days: days })) as Record<string, unknown>;
+    const n = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+    const f = (r.funnel ?? {}) as Record<string, unknown>;
+    return {
+      days: Number(r.days), active_openings: Number(r.active_openings), total: Number(r.total), prev_total: Number(r.prev_total),
+      avg_score: n(r.avg_score), prev_avg_score: n(r.prev_avg_score), median_minutes: n(r.median_minutes),
+      funnel: { applied: Number(f.applied ?? 0), scanned: Number(f.scanned ?? 0), passed: Number(f.passed ?? 0), hired: Number(f.hired ?? 0), rejected: Number(f.rejected ?? 0) },
+      inflow: ((r.inflow as { d: string; n: number }[] | null) ?? []).map((x) => ({ d: String(x.d), n: Number(x.n) })),
+      skills: ((r.skills as { name: string; n: number }[] | null) ?? []).map((x) => ({ name: String(x.name), n: Number(x.n) })),
+      buckets: ((r.buckets as number[] | null) ?? []).map(Number)
+    };
   },
 
   async listApplicants(q): Promise<ApplicantPage> {

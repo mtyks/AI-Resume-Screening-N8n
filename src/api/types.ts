@@ -181,3 +181,19 @@ export interface PositionStat {
   avg_score: number | null;
   buckets: number[]; // 10 ช่วงคะแนน 0-9, 10-19, … 90-100
 }
+
+/** สรุปข้อมูลหน้า Dashboard ตามตำแหน่งและช่วงเวลา (ฟังก์ชัน dashboard_summary) */
+export interface DashboardSummary {
+  days: number;
+  active_openings: number;
+  total: number;
+  prev_total: number;
+  avg_score: number | null;
+  prev_avg_score: number | null;
+  /** เวลามัธยฐานตั้งแต่ใบสมัครเข้าระบบจนสแกนเสร็จครั้งแรก (นาที) */
+  median_minutes: number | null;
+  funnel: { applied: number; scanned: number; passed: number; hired: number; rejected: number };
+  inflow: { d: string; n: number }[];
+  skills: { name: string; n: number }[];
+  buckets: number[];
+}

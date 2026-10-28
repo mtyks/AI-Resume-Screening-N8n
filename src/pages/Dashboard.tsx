@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import { useAsync } from '../lib';
+import { TONE_COLOR, fmtDuration, pctChange, scoreTone, useAsync } from '../lib';
+import { Funnel, InflowChart, ScoreSpread, SkillsChart } from '../dashCharts';
 import { useStats } from '../stats';
 import type { PositionStat } from '../api';
 import { ErrorBox, Loading, PageHead } from '../ui';
@@ -30,11 +31,11 @@ function closeText(s: PositionStat): { text: string; urgent: boolean } {
   return { text: `อีก ${d} วัน`, urgent: d <= 3 };
 }
 
-function Kpi({ label, value, hint, to, tone }: { label: string; value: string | number; hint?: string; to: string; tone?: 'brand' | 'accent' }) {
+function Kpi({ label, value, hint, to, tone, color }: { label: string; value: string | number; hint?: React.ReactNode; to: string; tone?: 'brand' | 'accent'; color?: string }) {
   return (
     <Link to={to} className="kpi" aria-label={`${label} ${value}`}>
       <span className="k">{label}</span>
-      <span className="v" style={tone ? { color: `var(--${tone})` } : undefined}>{value}</span>
+      <span className="v" style={color ? { color } : tone ? { color: `var(--${tone})` } : undefined}>{value}</span>
       {hint && <span className="h">{hint}</span>}
     </Link>
   );
@@ -71,76 +72,118 @@ function Spread({ buckets, threshold }: { buckets: number[]; threshold: number }
   );
 }
 
+
+function Delta({ cur, prev, unit = '%' }: { cur: number | null; prev: number | null; unit?: '%' | 'pt' }) {
+  if (cur === null || prev === null) return <span className="muted">ไม่มีข้อมูลช่วงก่อนให้เทียบ</span>;
+  const d = unit === '%' ? pctChange(cur, prev) : Math.round((cur - prev) * 10) / 10;
+  if (d === null) return <span className="muted">ไม่มีข้อมูลช่วงก่อนให้เทียบ</span>;
+  if (d === 0) return <span className="muted">เท่ากับช่วงก่อน</span>;
+  return <span className={d > 0 ? 'up' : 'down'}>{d > 0 ? '▲' : '▼'} {Math.abs(d)}{unit === '%' ? '%' : ' คะแนน'} จากช่วงก่อน</span>;
+}
+
+const RANGES = [7, 30, 90] as const;
+
 export default function Dashboard() {
   const { stats, error, loading } = useStats();
   const [scope, setScope] = useState<'open' | 'all'>('open');
   const [sort, setSort] = useState<'urgent' | 'total' | 'unread'>('urgent');
+  const [job, setJob] = useState<string>('');
+  const [days, setDays] = useState<number>(30);
   const hasWaiting = (stats ?? []).some((s) => s.pending > 0);
   const hp = useAsync(() => (hasWaiting ? api.pipelineHealth() : Promise.resolve({ stuck: 0, oldest_minutes: 0 })), [hasWaiting]);
+  const sum = useAsync(() => api.dashboardSummary(job || null, days), [job, days]);
+  const d = sum.data;
 
   const all = stats ?? [];
-  const rows = all.filter((s) => (scope === 'all' ? true : s.is_active));
-  const sum = (f: (s: PositionStat) => number) => rows.reduce((a, s) => a + f(s), 0);
-
-  const total = sum((s) => s.total);
-  const processed = sum((s) => s.passed + s.below + s.gate);
-  const avg = processed ? rows.reduce((a, s) => a + (s.avg_score ?? 0) * (s.passed + s.below + s.gate), 0) / processed : null;
-  const failed = sum((s) => s.failed);
-  const pending = sum((s) => s.pending);
-  const passed = sum((s) => s.passed);
-  const hired = sum((s) => s.hired);
+  const jobRows = all.filter((s) => (job ? s.job_id === job : scope === 'all' ? true : s.is_active));
+  const unread = jobRows.reduce((a, s) => a + s.unread, 0);
+  const failed = jobRows.reduce((a, s) => a + s.failed, 0);
 
   const rank = { bad: 0, warn: 1, ok: 2 } as const;
+  const rows = all.filter((s) => (scope === 'all' ? true : s.is_active));
   const sorted = [...rows].sort((a, b) => {
     if (sort === 'total') return b.total - a.total;
     if (sort === 'unread') return b.unread - a.unread || b.total - a.total;
     return rank[health(a).level] - rank[health(b).level] || Number(a.total === 0) - Number(b.total === 0) || b.unread - a.unread || b.total - a.total;
   });
   const attention = rows.filter((s) => health(s).level !== 'ok').length;
+  const range = days === 7 ? 'สัปดาห์นี้' : days === 30 ? 'เดือนนี้' : '90 วันนี้';
 
   return (
     <main className="page">
-      <PageHead title="ภาพรวม" sub="สิ่งที่ต้องทำก่อน และสุขภาพของแต่ละตำแหน่ง">
-        <div className="segbtn" role="group" aria-label="ขอบเขตตำแหน่ง">
-          <button type="button" aria-pressed={scope === 'open'} onClick={() => setScope('open')}>ตำแหน่งที่เปิดรับ</button>
-          <button type="button" aria-pressed={scope === 'all'} onClick={() => setScope('all')}>ทั้งหมด</button>
+      <PageHead title="ภาพรวม" sub="สิ่งที่ต้องทำก่อน คุณภาพผู้สมัคร และสถานะการสรรหา" />
+
+      <div className="dfilters">
+        <label className="sortsel">
+          <span className="muted">ตำแหน่ง</span>
+          <select className="select" value={job} onChange={(e) => setJob(e.target.value)} aria-label="กรองตามตำแหน่งงาน">
+            <option value="">ทุกตำแหน่ง</option>
+            {all.map((s) => <option key={s.job_id} value={s.job_id}>{s.position_name}{s.is_active ? '' : ' (ปิดรับ)'}</option>)}
+          </select>
+        </label>
+        <div className="segbtn" role="group" aria-label="ช่วงเวลา">
+          {RANGES.map((r) => <button key={r} type="button" aria-pressed={days === r} onClick={() => setDays(r)}>{r} วันล่าสุด</button>)}
         </div>
-      </PageHead>
+        {sum.loading && <span className="muted" role="status">กำลังโหลด…</span>}
+      </div>
 
       {error && <ErrorBox message={error} />}
+      {sum.error && <ErrorBox message={sum.error} />}
       {loading && !stats && <Loading />}
 
-      {stats && (
-        <>
-          {(hp.data?.stuck ?? 0) > 0 && (
-            <div role="alert" className="alert err">ระบบประมวลผลหยุดชะงัก: {hp.data?.stuck} คนรอนานเกิน 15 นาที ตรวจว่าเครื่องที่รัน n8n และ ngrok ยังเปิดอยู่</div>
-          )}
+      {(hp.data?.stuck ?? 0) > 0 && (
+        <div role="alert" className="alert err">ระบบประมวลผลหยุดชะงัก: {hp.data?.stuck} คนรอนานเกิน 15 นาที ตรวจว่าเครื่องที่รัน n8n และ ngrok ยังเปิดอยู่</div>
+      )}
 
+      {d && (
+        <>
           <div className="kpis">
-            <Kpi label="ยังไม่อ่าน" value={sum((s) => s.unread)} hint="กดเพื่อเริ่มอ่าน" to="/positions" tone="brand" />
-            <Kpi label="ผ่านเกณฑ์" value={passed} hint={processed ? `${Math.round((passed / processed) * 100)}% ของที่สแกนแล้ว` : 'ยังไม่มีผลสแกน'} to="/positions" tone="accent" />
-            <Kpi label="รับเข้าทำงาน" value={hired} hint={`จากผู้สมัคร ${total} คน`} to="/positions" />
-            <Kpi label="คะแนนเฉลี่ย" value={avg === null ? '—' : avg.toFixed(1)} hint={`จาก ${processed} คนที่สแกนแล้ว`} to="/positions" />
+            <Kpi label={`ผู้สมัครที่สแกน (${range})`} value={d.total} hint={<Delta cur={d.total} prev={d.prev_total} />} to="/positions" />
+            <Kpi label="คะแนนจับคู่เฉลี่ย" value={d.avg_score === null ? '—' : d.avg_score.toFixed(1)} color={d.avg_score === null ? undefined : TONE_COLOR[scoreTone(d.avg_score)]}
+              hint={<Delta cur={d.avg_score} prev={d.prev_avg_score} unit="pt" />} to="/positions" />
+            <Kpi label="เวลาสแกนเสร็จ (มัธยฐาน)" value={fmtDuration(d.median_minutes)} hint="นับจากใบสมัครเข้าระบบจนสแกนเสร็จ" to="/positions" />
+            <Kpi label="ตำแหน่งที่เปิดรับ" value={d.active_openings} hint={`จากทั้งหมด ${all.length} ตำแหน่ง`} to="/positions" tone="accent" />
           </div>
 
-          <section className="card dash-sum">
-            <div className="dash-sum-head">
-              <h2>ผลการสแกนทั้งหมด</h2>
-              <span className="muted">{total} คน{attention > 0 ? ` · ต้องดู ${attention} ตำแหน่ง` : ''}</span>
+          {(unread > 0 || failed > 0) && (
+            <div className="todo">
+              <b>ต้องทำ:</b>
+              {unread > 0 && <Link to={job ? `/positions/${job}` : '/positions'}>ยังไม่อ่าน {unread} คน →</Link>}
+              {failed > 0 && <Link to={job ? `/positions/${job}` : '/positions'} style={{ color: 'var(--danger-bar)' }}>สแกนล้มเหลว {failed} คน →</Link>}
             </div>
-            <OutcomeBar s={{ passed, below: sum((s) => s.below), gate: sum((s) => s.gate), pending, failed, total }} height={14} />
-            <div className="legend">
-              <span><i style={{ background: 'var(--accent)' }} />ผ่านเกณฑ์ {passed}</span>
-              <span><i style={{ background: 'var(--warn-bar)' }} />ต่ำกว่าเกณฑ์ {sum((s) => s.below)}</span>
-              <span><i style={{ background: 'var(--danger-bar)' }} />ไม่ผ่าน Gate {sum((s) => s.gate)}</span>
-              {pending > 0 && <span><i style={{ background: 'var(--line)' }} />รอประมวลผล {pending}</span>}
-              {failed > 0 && <span><i style={{ background: 'var(--muted)' }} />ล้มเหลว {failed}</span>}
-            </div>
-          </section>
+          )}
 
-          <section className="card" style={{ padding: 0 }}>
-            <div className="dash-sum-head" style={{ padding: '18px 20px 6px' }}>
-              <h2>สุขภาพรายตำแหน่ง</h2>
+          <div className="dgrid">
+            <section className="card dcard span2">
+              <div className="dash-sum-head"><h2>แนวโน้มผู้สมัครรายวัน</h2><span className="muted">{d.days} วันล่าสุด · รวม {d.total} คน</span></div>
+              <InflowChart data={d.inflow} />
+            </section>
+            <section className="card dcard">
+              <div className="dash-sum-head"><h2>สถานะการสรรหา (Funnel)</h2></div>
+              <Funnel f={d.funnel} />
+              <p className="muted fhint">ระบบยังไม่มีสถานะ "นัดสัมภาษณ์/Offer" จึงแสดงถึงขั้นรับเข้าทำงาน</p>
+            </section>
+            <section className="card dcard">
+              <div className="dash-sum-head"><h2>การกระจายคะแนนจับคู่</h2></div>
+              <ScoreSpread buckets={d.buckets} />
+            </section>
+            <section className="card dcard span2">
+              <div className="dash-sum-head"><h2>ทักษะที่พบบ่อยที่สุด</h2><span className="muted">จำนวนผู้สมัครที่พบทักษะนั้น</span></div>
+              <SkillsChart data={d.skills} total={d.total} />
+            </section>
+          </div>
+        </>
+      )}
+
+      {stats && (
+        <section className="card" style={{ padding: 0 }}>
+          <div className="dash-sum-head" style={{ padding: '18px 20px 6px' }}>
+            <h2>สุขภาพรายตำแหน่ง{attention > 0 ? ` · ต้องดู ${attention}` : ''}</h2>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className="segbtn" role="group" aria-label="ขอบเขตตำแหน่ง">
+                <button type="button" aria-pressed={scope === 'open'} onClick={() => setScope('open')}>เปิดรับ</button>
+                <button type="button" aria-pressed={scope === 'all'} onClick={() => setScope('all')}>ทั้งหมด</button>
+              </div>
               <label className="sortsel">
                 <span className="muted">เรียงตาม</span>
                 <select className="select" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
@@ -150,34 +193,34 @@ export default function Dashboard() {
                 </select>
               </label>
             </div>
-            {sorted.length === 0 && <div className="empty">ไม่มีตำแหน่งที่เปิดรับ</div>}
-            {sorted.length > 0 && (
-              <div className="ptable" role="table" aria-label="สุขภาพรายตำแหน่ง">
-                <div className="prow phead" role="row">
-                  <span role="columnheader">ตำแหน่ง</span><span role="columnheader">ผู้สมัคร</span>
-                  <span role="columnheader">ผลการสแกน</span><span role="columnheader">การกระจายคะแนน</span>
-                  <span role="columnheader">เฉลี่ย</span><span role="columnheader">ปิดรับ</span>
-                </div>
-                {sorted.map((s) => {
-                  const h = health(s); const c = closeText(s);
-                  return (
-                    <Link key={s.job_id} to={`/positions/${s.job_id}`} className="prow" role="row">
-                      <span className="pname" role="cell">
-                        <b>{s.position_name}</b>
-                        {h.level !== 'ok' && <span className={`hdot ${h.level}`}><i aria-hidden="true">{h.level === 'bad' ? '▲' : '●'}</i>{h.text}</span>}
-                      </span>
-                      <span role="cell" className="num">{s.total}{s.unread > 0 && <small>ใหม่ {s.unread}</small>}</span>
-                      <span role="cell"><OutcomeBar s={s} /></span>
-                      <span role="cell"><Spread buckets={s.buckets} threshold={s.match_threshold} /></span>
-                      <span role="cell" className="num">{s.avg_score ?? '—'}</span>
-                      <span role="cell" className={c.urgent ? 'urgent' : 'muted'}>{c.text}</span>
-                    </Link>
-                  );
-                })}
+          </div>
+          {sorted.length === 0 && <div className="empty">ไม่มีตำแหน่งที่เปิดรับ</div>}
+          {sorted.length > 0 && (
+            <div className="ptable" role="table" aria-label="สุขภาพรายตำแหน่ง">
+              <div className="prow phead" role="row">
+                <span role="columnheader">ตำแหน่ง</span><span role="columnheader">ผู้สมัคร</span>
+                <span role="columnheader">ผลการสแกน</span><span role="columnheader">การกระจายคะแนน</span>
+                <span role="columnheader">เฉลี่ย</span><span role="columnheader">ปิดรับ</span>
               </div>
-            )}
-          </section>
-        </>
+              {sorted.map((s) => {
+                const h = health(s); const c = closeText(s);
+                return (
+                  <Link key={s.job_id} to={`/positions/${s.job_id}`} className="prow" role="row">
+                    <span className="pname" role="cell">
+                      <b>{s.position_name}</b>
+                      {h.level !== 'ok' && <span className={`hdot ${h.level}`}><i aria-hidden="true">{h.level === 'bad' ? '▲' : '●'}</i>{h.text}</span>}
+                    </span>
+                    <span role="cell" className="num">{s.total}{s.unread > 0 && <small>ใหม่ {s.unread}</small>}</span>
+                    <span role="cell"><OutcomeBar s={s} /></span>
+                    <span role="cell"><Spread buckets={s.buckets} threshold={s.match_threshold} /></span>
+                    <span role="cell" className="num" style={s.avg_score !== null ? { color: TONE_COLOR[scoreTone(s.avg_score)] } : undefined}>{s.avg_score ?? '—'}</span>
+                    <span role="cell" className={c.urgent ? 'urgent' : 'muted'}>{c.text}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
       )}
     </main>
   );

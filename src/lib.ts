@@ -144,3 +144,24 @@ export function downloadCsv(filename: string, rows: unknown[][]): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
+
+/** โทนสีคะแนน: สูง ≥ 80 เขียว, กลาง 60–79 เหลือง, ต่ำ < 60 เทา */
+export type ScoreTone = 'high' | 'mid' | 'low';
+export function scoreTone(score: number): ScoreTone {
+  return score >= 80 ? 'high' : score >= 60 ? 'mid' : 'low';
+}
+export const TONE_COLOR: Record<ScoreTone, string> = { high: 'var(--accent)', mid: 'var(--warn-bar)', low: '#9aa5a0' };
+
+/** เปลี่ยนนาทีเป็นข้อความอ่านง่าย */
+export function fmtDuration(min: number | null): string {
+  if (min === null) return '—';
+  if (min < 1) return '< 1 นาที';
+  if (min < 60) return `${Math.round(min)} นาที`;
+  if (min < 1440) return `${(min / 60).toFixed(1)} ชม.`;
+  return `${(min / 1440).toFixed(1)} วัน`;
+}
+
+/** เปลี่ยนแปลงเป็นร้อยละเทียบช่วงก่อน (null = ไม่มีข้อมูลเทียบ) */
+export function pctChange(cur: number, prev: number): number | null {
+  return prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null;
+}

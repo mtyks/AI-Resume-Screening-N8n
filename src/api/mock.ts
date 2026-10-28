@@ -12,6 +12,7 @@ import type {
   Job,
   MatchResult,
   PositionStat,
+  DashboardSummary,
   Role,
   SubmitResult,
   SystemConfig,
@@ -456,6 +457,49 @@ export const mockApi: Api = {
         buckets
       };
     });
+  },
+
+  async dashboardSummary(jobId, days): Promise<DashboardSummary> {
+    await sleep(NET);
+    const job = jobId ? store.jobs.find((j) => j.job_id === jobId) : null;
+    const now = Date.now(), DAYMS = 86400000;
+    const inScope = store.candidates.filter((c) => !job || c.applied_position === job.position_name);
+    const cur = inScope.filter((c) => now - new Date(c.received_at).getTime() < days * DAYMS);
+    const prv = inScope.filter((c) => { const a = now - new Date(c.received_at).getTime(); return a >= days * DAYMS && a < 2 * days * DAYMS; });
+    const latest = (c: Candidate) => {
+      const j = store.jobs.find((x) => x.position_name === c.applied_position);
+      const m = store.matches.filter((x) => x.candidate_id === c.candidate_id && x.job_id === j?.job_id).sort((a, b) => b.evaluated_at.localeCompare(a.evaluated_at))[0];
+      return j && m ? { m, j } : null;
+    };
+    const lc = cur.map(latest).filter((x): x is NonNullable<ReturnType<typeof latest>> => x !== null);
+    const lp = prv.map(latest).filter((x): x is NonNullable<ReturnType<typeof latest>> => x !== null);
+    const avg = (xs: number[]) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null);
+    const mins = cur.map((c) => {
+      const ev = store.matches.filter((x) => x.candidate_id === c.candidate_id).map((x) => new Date(x.evaluated_at).getTime());
+      return ev.length ? (Math.min(...ev) - new Date(c.received_at).getTime()) / 60000 : null;
+    }).filter((x): x is number => x !== null && x >= 0).sort((a, b) => a - b);
+    const median = mins.length ? Math.round(mins[Math.floor(mins.length / 2)] * 10) / 10 : null;
+    const dayKey = (t: number) => new Date(t + 7 * 3600000).toISOString().slice(0, 10);
+    const inflow = Array.from({ length: days + 1 }, (_, i) => {
+      const d = dayKey(now - (days - i) * DAYMS);
+      return { d, n: cur.filter((c) => dayKey(new Date(c.received_at).getTime()) === d).length };
+    });
+    const counts = new Map<string, { name: string; n: number }>();
+    for (const c of cur) for (const s of new Set(c.skills.map((x) => x.trim()).filter(Boolean))) {
+      const k = s.toLowerCase(); const e = counts.get(k); if (e) e.n++; else counts.set(k, { name: s, n: 1 });
+    }
+    const skills = [...counts.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 10);
+    const buckets = Array.from({ length: 10 }, (_, b) => lc.filter((x) => Math.min(Math.floor(x.m.match_score / 10), 9) === b).length);
+    return {
+      days, active_openings: store.jobs.filter((j) => j.is_active).length, total: cur.length, prev_total: prv.length,
+      avg_score: avg(lc.map((x) => x.m.match_score)), prev_avg_score: avg(lp.map((x) => x.m.match_score)), median_minutes: median,
+      funnel: {
+        applied: cur.length, scanned: cur.filter((c) => c.processing_status === 'processed').length,
+        passed: lc.filter((x) => x.m.gate_status === 'Pass' && x.m.match_score >= x.j.match_threshold).length,
+        hired: cur.filter((c) => c.application_status === 'Hired').length, rejected: cur.filter((c) => c.application_status === 'Rejected').length
+      },
+      inflow, skills, buckets
+    };
   },
 
   async listApplicants(q): Promise<ApplicantPage> {

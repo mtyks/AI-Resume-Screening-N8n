@@ -13,7 +13,8 @@ import type {
   CandidatePatch,
   ApplicantQuery,
   ApplicantPage,
-  PositionStat
+  PositionStat,
+  DashboardSummary
 } from './types';
 
 /**
@@ -40,6 +41,8 @@ export interface Api {
   // ผู้สมัครและผลจับคู่
   /** สถิติรายตำแหน่ง (จำนวน ยังไม่อ่าน ผ่านเกณฑ์ ฯลฯ) */
   positionStats(): Promise<PositionStat[]>;
+  /** สรุปสำหรับ Dashboard: jobId = null คือทุกตำแหน่ง, days = ช่วงย้อนหลัง (วัน) */
+  dashboardSummary(jobId: string | null, days: number): Promise<DashboardSummary>;
   /** รายชื่อผู้สมัครของตำแหน่งหนึ่ง กรอง/เรียง/แบ่งหน้าที่ฝั่งเซิร์ฟเวอร์ */
   listApplicants(query: ApplicantQuery): Promise<ApplicantPage>;
   /** ทำเครื่องหมายอ่านแล้ว/ยังไม่อ่าน (หลายคนพร้อมกันได้) */
