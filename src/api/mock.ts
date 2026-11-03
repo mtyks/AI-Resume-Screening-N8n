@@ -5,6 +5,7 @@ import type {
   ApplicantKind,
   ApplicantPage,
   ApplicationInput,
+  PersonApplication,
   AuthorizedUser,
   Candidate,
   CriterionEval,
@@ -73,6 +74,8 @@ function seedJobs(): Job[] {
 
 interface Profile {
   id: string;
+  /** อีเมลที่ใช้สมัคร (ไม่ระบุ = สร้างจากรหัส) ใช้ทำตัวอย่างคนเดียวสมัครหลายตำแหน่ง */
+  email?: string;
   name: string;
   pos: string;
   when: string;
@@ -98,6 +101,8 @@ function seed(): Store {
     { id: 'C1968351904', name: 'กิตติพงษ์ แก้วมณี', pos: 'Automation', when: '2026-10-18T09:12:00+07:00', form: '1-3 ปี', m: [80, 60], p: [0], t: [85, 40], score: 67.2 },
     { id: 'C1968320055', name: 'วรัญญา จันทร์เพ็ญ', pos: 'Automation', when: '2026-10-17T20:31:00+07:00', form: null, m: [55, 60], p: [0], t: [0, 70], score: 54.0 },
     { id: 'C1968298833', name: 'สุรเชษฐ์ พูนผล', pos: 'Automation', when: '2026-10-17T13:02:00+07:00', form: '1-3 ปี', m: [20, 65], p: [0], t: [10, 70], score: 38.5 },
+    { id: 'C1968415701', email: 'c1968415639@example.com', name: 'ปิยะนุช วงศ์ดี', pos: 'Backend', when: '2026-10-20T09:30:00+07:00', form: '3-5 ปี', m: [78, 62], p: [40], t: [72, 35], score: 64.8 },
+    { id: 'C1968415702', email: 'c1968415639@example.com', name: 'ปิยะนุช วงศ์ดี', pos: 'Frontend', when: '2026-10-20T09:34:00+07:00', form: '3-5 ปี', m: [25, 70], p: [0], t: [30, 55, 60], score: 41.2 },
     { id: 'C1968261490', name: 'ศุภชัย รักเรียน', pos: 'Backend', when: '2026-10-16T18:40:00+07:00', form: null, m: [80, 0], p: [0], t: [80, 0], score: 41.0 }
   ];
 
@@ -122,7 +127,7 @@ function seed(): Store {
       candidate_id: p.id,
       full_name: p.name,
       phone_number: '08x-xxx-xxxx',
-      email: `${p.id.toLowerCase()}@example.com`,
+      email: p.email ?? `${p.id.toLowerCase()}@example.com`,
       applied_position: p.pos,
       self_reported_experience_range: p.form,
       skills,
@@ -337,8 +342,13 @@ function allApplicants(job: Job): ApplicantItem[] {
 /* ------------------------------- API ------------------------------- */
 
 const auditLocal: AuditEntry[] = [
-  { id: 3, at: new Date(Date.now() - 3600e3).toISOString(), actor: 'hr@example.com', action: 'status_change', target: 'C10000001', detail: { from: 'In Review', to: 'Hired' } },
-  { id: 2, at: new Date(Date.now() - 7200e3).toISOString(), actor: 'hr@example.com', action: 'export_csv', target: 'Automation Developer', detail: { rows: 46 } },
+  { id: 8, at: new Date(Date.now() - 1200e3).toISOString(), actor: 'somchai.hr@example.com', action: 'job_update', target: 'JOB-AUTO-001', detail: { name: 'Automation', fields: ['match_threshold', 'weight_musthave'], changes: { match_threshold: { from: 70, to: 75 }, weight_musthave: { from: 0.5, to: 0.6 } } } },
+  { id: 7, at: new Date(Date.now() - 2400e3).toISOString(), actor: 'napa.hr@example.com', action: 'status_change', target: 'C1968415639', detail: { from: 'In Review', to: 'Interview' } },
+  { id: 6, at: new Date(Date.now() - 3600e3).toISOString(), actor: 'napa.hr@example.com', action: 'note_edit', target: 'C1968415639', detail: null },
+  { id: 5, at: new Date(Date.now() - 5400e3).toISOString(), actor: 'somchai.hr@example.com', action: 'rescan', target: 'C1968402718', detail: null },
+  { id: 4, at: new Date(Date.now() - 7200e3).toISOString(), actor: 'somchai.hr@example.com', action: 'export_csv', target: 'Automation', detail: { rows: 46 } },
+  { id: 3, at: new Date(Date.now() - 10800e3).toISOString(), actor: 'admin@example.com', action: 'user_add', target: 'napa.hr@example.com', detail: { role: 'HR' } },
+  { id: 2, at: new Date(Date.now() - 20000e3).toISOString(), actor: 'napa.hr@example.com', action: 'status_change', target: 'C1968402718', detail: { from: 'In Review', to: 'Rejected' } },
   { id: 1, at: new Date(Date.now() - 86400e3).toISOString(), actor: 'ระบบอัตโนมัติ', action: 'candidate_removed', target: 'C10000002', detail: null }
 ];
 const DEMO_SOURCES = ['Facebook', 'JobsDB', 'LinkedIn', 'คนรู้จักแนะนำ', 'เว็บไซต์บริษัท']; // เฉพาะโหมดทดลอง
@@ -461,13 +471,17 @@ export const mockApi: Api = {
     });
   },
 
-  async dashboardSummary(jobId, days): Promise<DashboardSummary> {
+  async dashboardSummary(jobId, range): Promise<DashboardSummary> {
     await sleep(NET);
     const job = jobId ? store.jobs.find((j) => j.job_id === jobId) : null;
-    const now = Date.now(), DAYMS = 86400000;
+    const DAYMS = 86400000;
+    const from = range.from <= range.to ? range.from : range.to, to = range.from <= range.to ? range.to : range.from;
+    const t0 = Date.parse(from + 'T00:00:00+07:00'), t1 = Date.parse(to + 'T00:00:00+07:00') + DAYMS; // t1 = ต้นวันถัดไป (ไม่รวม)
+    const days = Math.round((t1 - t0) / DAYMS), tp = t0 - (t1 - t0);
     const inScope = store.candidates.filter((c) => !job || c.applied_position === job.position_name);
-    const cur = inScope.filter((c) => now - new Date(c.received_at).getTime() < days * DAYMS);
-    const prv = inScope.filter((c) => { const a = now - new Date(c.received_at).getTime(); return a >= days * DAYMS && a < 2 * days * DAYMS; });
+    const at = (c: Candidate) => new Date(c.received_at).getTime();
+    const cur = inScope.filter((c) => at(c) >= t0 && at(c) < t1);
+    const prv = inScope.filter((c) => at(c) >= tp && at(c) < t0);
     const latest = (c: Candidate) => {
       const j = store.jobs.find((x) => x.position_name === c.applied_position);
       const m = store.matches.filter((x) => x.candidate_id === c.candidate_id && x.job_id === j?.job_id).sort((a, b) => b.evaluated_at.localeCompare(a.evaluated_at))[0];
@@ -482,10 +496,15 @@ export const mockApi: Api = {
     }).filter((x): x is number => x !== null && x >= 0).sort((a, b) => a - b);
     const median = mins.length ? Math.round(mins[Math.floor(mins.length / 2)] * 10) / 10 : null;
     const dayKey = (t: number) => new Date(t + 7 * 3600000).toISOString().slice(0, 10);
-    const inflow = Array.from({ length: days + 1 }, (_, i) => {
-      const d = dayKey(now - (days - i) * DAYMS);
-      return { d, n: cur.filter((c) => dayKey(new Date(c.received_at).getTime()) === d).length };
+    const inflow = Array.from({ length: days }, (_, i) => {
+      const d = dayKey(t0 + i * DAYMS + 12 * 3600000);
+      return { d, n: cur.filter((c) => dayKey(at(c)) === d).length };
     });
+    const positions = store.jobs.filter((j) => !job || j.job_id === job.job_id).map((j) => {
+      const mine = cur.filter((c) => c.applied_position === j.position_name);
+      const read = mine.filter((c) => c.is_read).length;
+      return { job_id: j.job_id, name: j.position_name, is_active: j.is_active, total: mine.length, read, unread: mine.length - read };
+    }).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'th'));
     const counts = new Map<string, { name: string; n: number }>();
     for (const c of cur) for (const s of new Set(c.skills.map((x) => x.trim()).filter(Boolean))) {
       const k = s.toLowerCase(); const e = counts.get(k); if (e) e.n++; else counts.set(k, { name: s, n: 1 });
@@ -493,7 +512,7 @@ export const mockApi: Api = {
     const skills = [...counts.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 10);
     const buckets = Array.from({ length: 10 }, (_, b) => lc.filter((x) => Math.min(Math.floor(x.m.match_score / 10), 9) === b).length);
     return {
-      days, active_openings: store.jobs.filter((j) => j.is_active).length, total: cur.length, prev_total: prv.length,
+      days, from, to, positions, active_openings: store.jobs.filter((j) => j.is_active).length, total: cur.length, prev_total: prv.length,
       avg_score: avg(lc.map((x) => x.m.match_score)), prev_avg_score: avg(lp.map((x) => x.m.match_score)), median_minutes: median,
       funnel: {
         applied: cur.length, scanned: cur.filter((c) => c.processing_status === 'processed').length,
@@ -526,6 +545,22 @@ export const mockApi: Api = {
         return b.candidate.received_at.localeCompare(a.candidate.received_at);
       });
     return { items: clone(items.slice((q.page - 1) * q.pageSize, q.page * q.pageSize)), total: items.length };
+  },
+
+  async searchApplicants(text): Promise<PersonApplication[]> {
+    await sleep(NET);
+    const t = text.trim().toLowerCase();
+    if (t.length < 2) return [];
+    const emails = new Set(store.candidates
+      .filter((c) => [c.full_name, c.email, c.phone_number, c.candidate_id].some((v) => v.toLowerCase().includes(t)))
+      .map((c) => c.email.toLowerCase()));
+    const out: PersonApplication[] = [];
+    for (const job of store.jobs) {
+      for (const it of allApplicants(job)) {
+        if (emails.has(it.candidate.email.toLowerCase())) out.push({ candidate: it.candidate, job_id: job.job_id, threshold: job.match_threshold, score: it.score, gate: it.gate, kind: it.kind });
+      }
+    }
+    return clone(out.slice(0, 300));
   },
 
   async setRead(ids, read) {

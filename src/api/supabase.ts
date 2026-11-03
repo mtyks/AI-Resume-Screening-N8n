@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Api } from './api';
 import type {
-  ApplicantItem, ApplicantPage, ApplicationInput, AuthorizedUser, Candidate, Job, MatchResult,
+  ApplicantItem, ApplicantPage, ApplicationInput, PersonApplication, AuthorizedUser, Candidate, Job, MatchResult,
   AuditEntry, DashboardSummary, OpenPosition, PositionStat, Role, SubmitResult, SystemConfig, SystemLog
 } from './types';
 
@@ -136,12 +136,14 @@ export const supabaseApi: Api = {
     }));
   },
 
-  async dashboardSummary(jobId, days): Promise<DashboardSummary> {
-    const r = ok(await sb().rpc('dashboard_summary', { p_job: jobId, p_days: days })) as Record<string, unknown>;
+  async dashboardSummary(jobId, range): Promise<DashboardSummary> {
+    const r = ok(await sb().rpc('dashboard_summary', { p_job: jobId, p_from: range.from, p_to: range.to })) as Record<string, unknown>;
     const n = (v: unknown) => (v === null || v === undefined ? null : Number(v));
     const f = (r.funnel ?? {}) as Record<string, unknown>;
     return {
-      days: Number(r.days), active_openings: Number(r.active_openings), total: Number(r.total), prev_total: Number(r.prev_total),
+      days: Number(r.days), from: String(r.from), to: String(r.to),
+      positions: ((r.positions as Record<string, unknown>[] | null) ?? []).map((x) => ({ job_id: String(x.job_id), name: String(x.name), is_active: Boolean(x.is_active), total: Number(x.total), read: Number(x.read), unread: Number(x.unread) })),
+      active_openings: Number(r.active_openings), total: Number(r.total), prev_total: Number(r.prev_total),
       avg_score: n(r.avg_score), prev_avg_score: n(r.prev_avg_score), median_minutes: n(r.median_minutes),
       funnel: { applied: Number(f.applied ?? 0), scanned: Number(f.scanned ?? 0), passed: Number(f.passed ?? 0), interview: Number(f.interview ?? 0), offer: Number(f.offer ?? 0), hired: Number(f.hired ?? 0), rejected: Number(f.rejected ?? 0) },
       inflow: ((r.inflow as { d: string; n: number }[] | null) ?? []).map((x) => ({ d: String(x.d), n: Number(x.n) })),
@@ -180,6 +182,29 @@ export const supabaseApi: Api = {
       kind: r.kind as ApplicantItem['kind']
     }));
     return { items, total: rows.length ? Number(rows[0].total_count) : 0 };
+  },
+
+  async searchApplicants(text): Promise<PersonApplication[]> {
+    const t = text.trim();
+    if (t.length < 2) return [];
+    const rows = (ok(await sb().rpc('search_applicants', { p_q: t })) ?? []) as Record<string, unknown>[];
+    return rows.map((r): PersonApplication => ({
+      candidate: {
+        candidate_id: String(r.candidate_id), full_name: String(r.full_name), phone_number: String(r.phone_number),
+        email: String(r.email), applied_position: String(r.applied_position),
+        self_reported_experience_range: (r.self_reported_experience_range as string | null) ?? null,
+        skills: (r.skills as string[] | null) ?? [], resume_file_url: String(r.resume_file_url),
+        received_at: String(r.received_at), application_status: String(r.application_status),
+        processing_status: r.processing_status as Candidate['processing_status'],
+        processing_error: (r.processing_error as string | null) ?? null,
+        is_read: Boolean(r.is_read), starred: Boolean(r.starred), hr_note: (r.hr_note as string | null) ?? null
+      },
+      job_id: (r.job_id as string | null) ?? null,
+      threshold: r.match_threshold === null || r.match_threshold === undefined ? null : Number(r.match_threshold),
+      score: r.match_score === null || r.match_score === undefined ? null : Number(r.match_score),
+      gate: (r.gate_status as string | null) ?? null,
+      kind: r.kind as PersonApplication['kind']
+    }));
   },
 
   async setRead(ids, read) {

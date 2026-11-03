@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ApplicantItem, Candidate, CandidateRow, Job } from './api';
+import type { ApplicantItem, Candidate, CandidateRow, Job, PersonApplication } from './api';
 
 /** โหลดข้อมูลแบบ async พร้อมสถานะ loading/error และ reload() */
 export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
@@ -128,6 +128,65 @@ export function sourceFromParam(v: string | null): string {
 
 /** จำนวนทักษะที่แสดงในแถวผู้สมัคร ส่วนที่เหลือรวมเป็น "+N" (ดูครบในหน้ารายละเอียด) */
 export const MAX_SKILL_CHIPS = 3;
+
+/* ---------- ช่วงวันที่ของ Dashboard (เวลาไทย) ---------- */
+
+/** วันที่วันนี้ตามเวลาไทย รูปแบบ YYYY-MM-DD */
+export function bkkToday(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+}
+
+/** บวก/ลบวันจากวันที่ YYYY-MM-DD (คำนวณแบบ UTC จึงไม่เพี้ยนจากเวลาออมแสง) */
+export function addDays(iso: string, n: number): string {
+  const t = Date.parse(iso + 'T00:00:00Z') + n * 86400000;
+  return new Date(t).toISOString().slice(0, 10);
+}
+
+export type RangePreset = 'today' | 'yesterday' | '7' | '30' | '90' | 'custom';
+
+export const RANGE_PRESETS: [RangePreset, string][] = [
+  ['today', 'วันนี้'], ['yesterday', 'เมื่อวาน'], ['7', '7 วันล่าสุด'], ['30', '30 วันล่าสุด'], ['90', '90 วันล่าสุด'], ['custom', 'เลือกวันที่']
+];
+
+/** ช่วงวันที่ของตัวเลือกสำเร็จรูป (N วันล่าสุด = นับรวมวันนี้) */
+export function presetRange(p: Exclude<RangePreset, 'custom'>, today: string): { from: string; to: string } {
+  if (p === 'today') return { from: today, to: today };
+  if (p === 'yesterday') { const y = addDays(today, -1); return { from: y, to: y }; }
+  return { from: addDays(today, -(Number(p) - 1)), to: today };
+}
+
+/** ข้อความช่วงวันที่ภาษาไทย เช่น "3 พ.ย. 2569" หรือ "28 ต.ค. – 3 พ.ย. 2569" */
+export function fmtRangeTh(from: string, to: string): string {
+  const f = (iso: string, year: boolean) => new Intl.DateTimeFormat('th-TH', { timeZone: 'UTC', day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) }).format(new Date(iso + 'T00:00:00Z'));
+  return from === to ? f(from, true) : `${f(from, from.slice(0, 4) !== to.slice(0, 4))} – ${f(to, true)}`;
+}
+
+/** ผู้สมัครหนึ่งคน (รวมทุกใบสมัครที่ใช้อีเมลเดียวกัน) */
+export interface Person {
+  key: string;
+  name: string;
+  email: string;
+  phone: string;
+  applications: PersonApplication[];
+}
+
+/** จัดกลุ่มใบสมัครตามอีเมล (ไม่สนตัวพิมพ์) ใบสมัครเรียงใหม่สุดก่อน คนที่สมัครล่าสุดอยู่บนสุด */
+export function groupPeople(apps: PersonApplication[]): Person[] {
+  const map = new Map<string, Person>();
+  for (const a of apps) {
+    const key = a.candidate.email.trim().toLowerCase();
+    let p = map.get(key);
+    if (!p) { p = { key, name: a.candidate.full_name, email: a.candidate.email, phone: a.candidate.phone_number, applications: [] }; map.set(key, p); }
+    p.applications.push(a);
+  }
+  const latest = (p: Person) => p.applications.reduce((m, a) => (a.candidate.received_at > m ? a.candidate.received_at : m), '');
+  for (const p of map.values()) {
+    p.applications.sort((a, b) => b.candidate.received_at.localeCompare(a.candidate.received_at));
+    p.name = p.applications[0].candidate.full_name;
+    p.phone = p.applications[0].candidate.phone_number;
+  }
+  return [...map.values()].sort((a, b) => latest(b).localeCompare(latest(a)));
+}
 
 /** หมายเหตุสั้น ๆ ใต้ป้ายสถานะในรายการผู้สมัคร */
 export function itemNote(it: ApplicantItem, threshold: number): string {

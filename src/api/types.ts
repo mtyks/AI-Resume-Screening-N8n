@@ -146,6 +146,16 @@ export interface ApplicantItem {
   kind: ApplicantKind;
 }
 
+/** ใบสมัครหนึ่งใบของผู้สมัคร พร้อมผลประเมินล่าสุดของตำแหน่งนั้น (ใช้ในการค้นหาผู้สมัครข้ามตำแหน่ง) */
+export interface PersonApplication {
+  candidate: Candidate;
+  job_id: string | null;
+  threshold: number | null;
+  score: number | null;
+  gate: string | null;
+  kind: ApplicantKind;
+}
+
 export type ApplicantSort = 'score' | 'recent' | 'name' | 'unread';
 
 /** เงื่อนไขค้นหารายชื่อผู้สมัครของตำแหน่งหนึ่ง (กรอง เรียง แบ่งหน้าที่ฝั่งฐานข้อมูล) */
@@ -186,9 +196,26 @@ export interface PositionStat {
   buckets: number[]; // 10 ช่วงคะแนน 0-9, 10-19, … 90-100
 }
 
-/** สรุปข้อมูลหน้า Dashboard ตามตำแหน่งและช่วงเวลา (ฟังก์ชัน dashboard_summary) */
+/** สรุปข้อมูลหน้า Dashboard ตามตำแหน่งและช่วงวันที่ (ฟังก์ชัน dashboard_summary) */
+/** ช่วงวันที่ของ Dashboard (วันที่ตามเวลาไทย รูปแบบ YYYY-MM-DD รวมวันสุดท้ายทั้งวัน) */
+export interface DateRange { from: string; to: string }
+
+/** ผู้สมัครของตำแหน่งหนึ่งในช่วงวันที่ที่เลือก (อ่านแล้ว + ยังไม่อ่าน = รวม) */
+export interface PositionReadStat {
+  job_id: string;
+  name: string;
+  is_active: boolean;
+  total: number;
+  read: number;
+  unread: number;
+}
+
 export interface DashboardSummary {
   days: number;
+  from: string;
+  to: string;
+  /** ตำแหน่งทั้งหมด เรียงผู้สมัครมากสุดก่อน (ตำแหน่งที่ไม่มีผู้สมัครได้ total = 0) */
+  positions: PositionReadStat[];
   active_openings: number;
   total: number;
   prev_total: number;

@@ -1,5 +1,7 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { TONE_COLOR, scoreTone } from './lib';
-import type { DashboardSummary } from './api';
+import type { DashboardSummary, PositionReadStat } from './api';
 
 const fmtDay = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
 
@@ -8,7 +10,7 @@ export function InflowChart({ data }: { data: DashboardSummary['inflow'] }) {
   const W = 640, H = 190, L = 30, R = 10, T = 12, B = 26;
   const max = Math.max(1, ...data.map((x) => x.n));
   const top = max <= 4 ? 4 : Math.ceil(max / 4) * 4;
-  const x = (i: number) => L + (data.length <= 1 ? 0 : (i / (data.length - 1)) * (W - L - R));
+  const x = (i: number) => L + (data.length <= 1 ? (W - L - R) / 2 : (i / (data.length - 1)) * (W - L - R));
   const y = (n: number) => T + (1 - n / top) * (H - T - B);
   const line = data.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.n).toFixed(1)}`).join(' ');
   const area = `${line} L${x(data.length - 1).toFixed(1)},${H - B} L${x(0).toFixed(1)},${H - B} Z`;
@@ -96,6 +98,62 @@ export function ScoreSpread({ buckets }: { buckets: number[] }) {
         <span><i style={{ background: TONE_COLOR.mid }} />ปานกลาง (60–79)</span>
         <span><i style={{ background: TONE_COLOR.low }} />ต่ำ (ต่ำกว่า 60)</span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * ผู้สมัครรายตำแหน่ง: แท่งซ้อนแนวนอน ยังไม่อ่าน (เขียวเข้ม) + อ่านแล้ว (เทา)
+ * ความยาวรวมของแท่ง = จำนวนผู้สมัครของตำแหน่ง เทียบกับตำแหน่งที่มากที่สุด ตัวเลขทุกแถวแสดงเป็นคอลัมน์ข้างแท่ง (ไม่ใช้สีอย่างเดียว)
+ * ตำแหน่งที่ยังไม่มีผู้สมัครซ่อนไว้ใต้ปุ่ม เพื่อไม่ให้รายการยาวเกินจำเป็น
+ */
+export function PositionReadChart({ rows }: { rows: PositionReadStat[] }) {
+  const [showEmpty, setShowEmpty] = useState(false);
+  const withApps = rows.filter((r) => r.total > 0);
+  const none = rows.filter((r) => r.total === 0);
+  const max = Math.max(1, ...rows.map((r) => r.total));
+  const sum = rows.reduce((a, r) => ({ total: a.total + r.total, read: a.read + r.read, unread: a.unread + r.unread }), { total: 0, read: 0, unread: 0 });
+  const shown = showEmpty ? [...withApps, ...none] : withApps;
+  return (
+    <div className="prchart">
+      <div className="prsummary">
+        <div className="legend">
+          <span><i style={{ background: 'var(--brand)' }} />ยังไม่อ่าน</span>
+          <span><i style={{ background: 'var(--read-gray)' }} />อ่านแล้ว</span>
+        </div>
+        <span className="muted">รวม <b>{sum.total}</b> คน · อ่านแล้ว <b>{sum.read}</b> · ยังไม่อ่าน <b style={{ color: 'var(--brand)' }}>{sum.unread}</b></span>
+      </div>
+      {withApps.length === 0 && <div className="chart-empty static">ยังไม่มีผู้สมัครในช่วงวันที่นี้</div>}
+      {shown.length > 0 && (
+        <>
+          <div className="prrow prhead" aria-hidden="true"><span>ตำแหน่ง</span><span /><span className="n">รวม</span><span className="n">อ่านแล้ว</span><span className="n">ยังไม่อ่าน</span></div>
+          <ol className="prrows" aria-label="ผู้สมัครรายตำแหน่ง แยกอ่านแล้วและยังไม่อ่าน">
+            {shown.map((r) => (
+              <li key={r.job_id}>
+                <Link className="prrow" to={`/positions/${r.job_id}`} title={`${r.name}: รวม ${r.total} คน อ่านแล้ว ${r.read} ยังไม่อ่าน ${r.unread}`}>
+                  <span className="nm">{r.name}{!r.is_active && <small className="muted"> (ปิดรับ)</small>}</span>
+                  <span className="bar" aria-hidden="true">
+                    {r.total > 0 && (
+                      <span className="stack" style={{ width: `${(r.total / max) * 100}%` }}>
+                        {r.unread > 0 && <span className="seg unread" style={{ flexGrow: r.unread }} />}
+                        {r.read > 0 && <span className="seg read" style={{ flexGrow: r.read }} />}
+                      </span>
+                    )}
+                  </span>
+                  <span className="n tot">{r.total}</span>
+                  <span className="n"><i className="lbl">อ่านแล้ว </i>{r.read}</span>
+                  <span className={`n${r.unread > 0 ? ' hot' : ''}`}><i className="lbl">ยังไม่อ่าน </i>{r.unread}</span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+      {none.length > 0 && (
+        <button type="button" className="tab prmore" aria-expanded={showEmpty} onClick={() => setShowEmpty((v) => !v)}>
+          {showEmpty ? 'ซ่อนตำแหน่งที่ยังไม่มีผู้สมัคร' : `แสดงอีก ${none.length} ตำแหน่งที่ยังไม่มีผู้สมัคร`}
+        </button>
+      )}
     </div>
   );
 }

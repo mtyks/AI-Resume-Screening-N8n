@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import { TONE_COLOR, fmtDuration, pctChange, scoreTone, useAsync } from '../lib';
-import { Funnel, InflowChart, ScoreSpread, SkillsChart } from '../dashCharts';
+import { RANGE_PRESETS, TONE_COLOR, addDays, bkkToday, fmtDuration, fmtRangeTh, pctChange, presetRange, scoreTone, useAsync, type RangePreset } from '../lib';
+import { Funnel, InflowChart, PositionReadChart, ScoreSpread, SkillsChart } from '../dashCharts';
 import { useStats } from '../stats';
 import type { PositionStat } from '../api';
 import { ErrorBox, Loading, PageHead } from '../ui';
@@ -81,17 +81,28 @@ function Delta({ cur, prev, unit = '%' }: { cur: number | null; prev: number | n
   return <span className={d > 0 ? 'up' : 'down'}>{d > 0 ? '▲' : '▼'} {Math.abs(d)}{unit === '%' ? '%' : ' คะแนน'} จากช่วงก่อน</span>;
 }
 
-const RANGES = [7, 30, 90] as const;
-
 export default function Dashboard() {
   const { stats, error, loading } = useStats();
   const [scope, setScope] = useState<'open' | 'all'>('open');
   const [sort, setSort] = useState<'urgent' | 'total' | 'unread'>('urgent');
   const [job, setJob] = useState<string>('');
-  const [days, setDays] = useState<number>(30);
+  const today = bkkToday();
+  const [preset, setPreset] = useState<RangePreset>('30');
+  const [cFrom, setCFrom] = useState<string>(() => addDays(bkkToday(), -6));
+  const [cTo, setCTo] = useState<string>(() => bkkToday());
+  // ช่วงวันที่ที่ใช้จริง: ตัวเลือกสำเร็จรูป หรือที่กำหนดเอง (สลับให้ถ้ากรอกกลับด้าน, จำกัดไม่เกิน 1 ปี, ไม่เลยวันนี้)
+  const range = useMemo(() => {
+    if (preset !== 'custom') return presetRange(preset, today);
+    let a = cFrom || today, b = cTo || today;
+    if (a > b) [a, b] = [b, a];
+    if (b > today) b = today;
+    if (a > b) a = b;
+    if (a < addDays(b, -365)) a = addDays(b, -365);
+    return { from: a, to: b };
+  }, [preset, cFrom, cTo, today]);
   const hasWaiting = (stats ?? []).some((s) => s.pending > 0);
   const hp = useAsync(() => (hasWaiting ? api.pipelineHealth() : Promise.resolve({ stuck: 0, oldest_minutes: 0 })), [hasWaiting]);
-  const sum = useAsync(() => api.dashboardSummary(job || null, days), [job, days]);
+  const sum = useAsync(() => api.dashboardSummary(job || null, range), [job, range.from, range.to]);
   const d = sum.data;
 
   const all = stats ?? [];
@@ -107,7 +118,7 @@ export default function Dashboard() {
     return rank[health(a).level] - rank[health(b).level] || Number(a.total === 0) - Number(b.total === 0) || b.unread - a.unread || b.total - a.total;
   });
   const attention = rows.filter((s) => health(s).level !== 'ok').length;
-  const range = days === 7 ? 'สัปดาห์นี้' : days === 30 ? 'เดือนนี้' : '90 วันนี้';
+  const rangeText = preset === 'custom' ? fmtRangeTh(range.from, range.to) : (RANGE_PRESETS.find(([k]) => k === preset)?.[1] ?? '');
 
   return (
     <main className="page">
@@ -121,11 +132,21 @@ export default function Dashboard() {
             {all.map((s) => <option key={s.job_id} value={s.job_id}>{s.position_name}{s.is_active ? '' : ' (ปิดรับ)'}</option>)}
           </select>
         </label>
-        <div className="segbtn" role="group" aria-label="ช่วงเวลา">
-          {RANGES.map((r) => <button key={r} type="button" aria-pressed={days === r} onClick={() => setDays(r)}>{r} วันล่าสุด</button>)}
+        <div className="segbtn" role="group" aria-label="ช่วงเวลา" style={{ flexWrap: 'wrap' }}>
+          {RANGE_PRESETS.map(([k, label]) => <button key={k} type="button" aria-pressed={preset === k} onClick={() => setPreset(k)}>{label}</button>)}
         </div>
         {sum.loading && <span className="muted" role="status">กำลังโหลด…</span>}
       </div>
+      {preset === 'custom' && (
+        <div className="dates">
+          <label className="field"><span className="muted" style={{ fontSize: 13.5 }}>ตั้งแต่วันที่</span>
+            <input className="input" type="date" value={cFrom} max={today} onChange={(e) => setCFrom(e.target.value)} aria-label="ตั้งแต่วันที่" /></label>
+          <label className="field"><span className="muted" style={{ fontSize: 13.5 }}>ถึงวันที่</span>
+            <input className="input" type="date" value={cTo} max={today} onChange={(e) => setCTo(e.target.value)} aria-label="ถึงวันที่" /></label>
+          <span className="rangenote">เลือกวันเดียวกันทั้งสองช่องเพื่อดูเฉพาะวันนั้น</span>
+        </div>
+      )}
+      <p className="rangenote" style={{ margin: 0 }}>กำลังดูข้อมูลของ <b style={{ color: 'var(--ink)' }}>{fmtRangeTh(range.from, range.to)}</b>{range.from === range.to ? '' : ` (${d?.days ?? '…'} วัน)`}</p>
 
       {error && <ErrorBox message={error} />}
       {sum.error && <ErrorBox message={sum.error} />}
@@ -138,7 +159,7 @@ export default function Dashboard() {
       {d && (
         <>
           <div className="kpis">
-            <Kpi label={`ผู้สมัครที่สแกน (${range})`} value={d.total} hint={<Delta cur={d.total} prev={d.prev_total} />} to="/positions" />
+            <Kpi label={`ผู้สมัครที่เข้ามา (${rangeText})`} value={d.total} hint={<Delta cur={d.total} prev={d.prev_total} />} to="/positions" />
             <Kpi label="คะแนนจับคู่เฉลี่ย" value={d.avg_score === null ? '—' : d.avg_score.toFixed(1)} color={d.avg_score === null ? undefined : TONE_COLOR[scoreTone(d.avg_score)]}
               hint={<Delta cur={d.avg_score} prev={d.prev_avg_score} unit="pt" />} to="/positions" />
             <Kpi label="เวลาสแกนเสร็จ (มัธยฐาน)" value={fmtDuration(d.median_minutes)} hint="เวลาที่ AI ใช้สแกนจริง (ไม่นับเวลารอคิว)" to="/positions" />
@@ -155,7 +176,11 @@ export default function Dashboard() {
 
           <div className="dgrid">
             <section className="card dcard span2">
-              <div className="dash-sum-head"><h2>แนวโน้มผู้สมัครรายวัน</h2><span className="muted">{d.days} วันล่าสุด · รวม {d.total} คน</span></div>
+              <div className="dash-sum-head"><h2>ผู้สมัครรายตำแหน่ง</h2><span className="muted">{fmtRangeTh(d.from, d.to)} · กดแถวเพื่อดูรายชื่อ</span></div>
+              <PositionReadChart rows={d.positions} />
+            </section>
+            <section className="card dcard span2">
+              <div className="dash-sum-head"><h2>แนวโน้มผู้สมัครรายวัน</h2><span className="muted">{fmtRangeTh(d.from, d.to)} · รวม {d.total} คน</span></div>
               <InflowChart data={d.inflow} />
             </section>
             <section className="card dcard">

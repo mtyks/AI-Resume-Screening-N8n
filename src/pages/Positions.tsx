@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { api, type PersonApplication } from '../api';
+import { KIND_LABEL, STATUS_LABEL, fmtShort, groupPeople, itemNote, useAsync } from '../lib';
 import { useStats } from '../stats';
 import { ErrorBox, Loading, PageHead } from '../ui';
 
@@ -13,6 +15,17 @@ export default function Positions() {
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [sort, setSort] = useState<Sort>('unread');
 
+  // ค้นหาผู้สมัครข้ามทุกตำแหน่ง (รอผู้ใช้หยุดพิมพ์ 0.3 วินาทีก่อนค้นหา)
+  const [pq, setPq] = useState('');
+  const [pqd, setPqd] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setPqd(pq.trim()), 300);
+    return () => clearTimeout(id);
+  }, [pq]);
+  const searching = pqd.length >= 2;
+  const found = useAsync(() => (searching ? api.searchApplicants(pqd) : Promise.resolve([])), [pqd]);
+  const people = useMemo(() => groupPeople(found.data ?? []), [found.data]);
+
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase();
     return (stats ?? [])
@@ -24,7 +37,60 @@ export default function Positions() {
 
   return (
     <main className="page">
-      <PageHead title="ผู้สมัครรายตำแหน่ง" sub="เลือกตำแหน่งเพื่อดูรายชื่อผู้สมัคร เรียงตามคะแนน กรอง และส่งออกได้" />
+      <PageHead title="ผู้สมัครรายตำแหน่ง" sub="ค้นหาผู้สมัครจากชื่อ อีเมล หรือเบอร์โทร เพื่อดูว่าสมัครตำแหน่งใดบ้างและผลเป็นอย่างไร หรือเลือกตำแหน่งเพื่อดูรายชื่อผู้สมัคร" />
+
+      <div className="field" style={{ marginBottom: 18 }}>
+        <label htmlFor="ppl" style={{ fontSize: 14.5, fontWeight: 600 }}>ค้นหาผู้สมัคร</label>
+        <input id="ppl" className="input" type="search" style={{ height: 48, maxWidth: 560 }} placeholder="พิมพ์ชื่อ อีเมล เบอร์โทร หรือรหัสผู้สมัคร (อย่างน้อย 2 ตัวอักษร)" value={pq} onChange={(e) => setPq(e.target.value)} autoComplete="off" />
+      </div>
+
+      {pq.trim().length > 0 && pq.trim().length < 2 && <div className="muted" style={{ fontSize: 14, marginBottom: 14 }}>พิมพ์อย่างน้อย 2 ตัวอักษร</div>}
+      {searching && (
+        <section aria-label="ผลการค้นหาผู้สมัคร" style={{ marginBottom: 28 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 600, margin: '0 0 12px' }}>
+            ผลการค้นหาผู้สมัคร{found.data ? ` (${people.length} คน)` : ''}
+          </h2>
+          {found.error && <ErrorBox message={found.error} />}
+          {found.loading && !found.data && <Loading />}
+          {found.data && people.length === 0 && !found.loading && <div className="empty">ไม่พบผู้สมัครที่ตรงกับ “{pqd}”</div>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, opacity: found.loading && found.data ? 0.6 : 1 }}>
+            {people.map((p) => (
+              <article key={p.key} className="personcard">
+                <header style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <h3 style={{ fontFamily: 'var(--display)', fontSize: 18, fontWeight: 600, overflowWrap: 'anywhere' }}>{p.name}</h3>
+                    <div className="muted" style={{ fontSize: 13.5, overflowWrap: 'anywhere' }}>{p.email} · {p.phone}</div>
+                  </div>
+                  <span className="chip">สมัคร {p.applications.length} ตำแหน่ง</span>
+                </header>
+                <ul className="applist">
+                  {p.applications.map((a: PersonApplication) => {
+                    const c = a.candidate;
+                    const note = itemNote({ candidate: c, score: a.score, gate: a.gate, kind: a.kind }, a.threshold ?? 0);
+                    return (
+                      <li key={c.candidate_id}>
+                        <Link className="approw" to={`/candidate/${c.candidate_id}`}>
+                          <span className="apppos">
+                            <b>{c.applied_position}</b>
+                            <span className="muted" style={{ fontSize: 12.5 }}>สมัครเมื่อ {fmtShort(c.received_at)} · สถานะ {STATUS_LABEL[c.application_status] ?? c.application_status}</span>
+                          </span>
+                          <span className="appscore">
+                            {a.score !== null ? <><b>{a.score.toFixed(1)}</b> / 100{a.threshold !== null && <span className="muted"> (เกณฑ์ {a.threshold})</span>}</> : <span className="muted">ยังไม่มีคะแนน</span>}
+                          </span>
+                          <span className="appkind">
+                            <span className={`pill ${a.kind}`}>{a.kind === 'pending' && a.score !== null ? 'กำลังสแกนซ้ำ' : KIND_LABEL[a.kind]}</span>
+                            {note && <span className="muted" style={{ fontSize: 12.5 }}>{note}</span>}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
         <div className="field">

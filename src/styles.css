@@ -368,3 +368,49 @@ a.prow:hover { background: var(--neutral-bg); }
 .vbars .col .v { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
 .vbars .col .x { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
 @media (max-width: 860px) { .dgrid, .hbars { grid-template-columns: minmax(0, 1fr); } }
+
+/* ค้นหาผู้สมัครข้ามตำแหน่ง (หน้า ผู้สมัครรายตำแหน่ง) */
+.personcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.applist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.applist li + li { border-top: 1px solid var(--line); }
+.approw { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1.3fr); gap: 8px 16px; align-items: center; padding: 12px 6px; color: inherit; text-decoration: none; border-radius: 8px; }
+.approw:hover { background: var(--accent-soft); }
+.apppos, .appkind { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-width: 0; }
+.apppos b { overflow-wrap: anywhere; }
+.appscore { font-size: 14.5px; }
+@media (max-width: 720px) { .approw { grid-template-columns: 1fr; } }
+
+/* ผู้สมัครรายตำแหน่ง (แท่งซ้อน อ่านแล้ว/ยังไม่อ่าน) */
+:root { --read-gray: #8fa89b; }
+.prchart { display: flex; flex-direction: column; gap: 12px; }
+.prsummary { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; align-items: center; font-size: 14px; }
+.prrows { list-style: none; margin: 0; padding: 0; }
+.prrow { display: grid; grid-template-columns: minmax(130px, 26%) minmax(0, 1fr) 52px 76px 86px; gap: 6px 14px; align-items: center; padding: 8px 6px; color: inherit; text-decoration: none; border-radius: 8px; font-size: 14.5px; }
+.prrows .prrow:hover { background: var(--accent-soft); }
+.prhead { font-size: 12.5px; color: var(--muted); padding-bottom: 2px; }
+.prrow .nm { overflow-wrap: anywhere; }
+.prrow .n { text-align: right; font-variant-numeric: tabular-nums; }
+.prrow .n.tot { font-weight: 700; }
+.prrow .n.hot { color: var(--brand); font-weight: 700; }
+.prrow .lbl { display: none; font-style: normal; color: var(--muted); font-weight: 400; }
+.prrow .bar { display: flex; height: 16px; min-width: 0; }
+.prrow .stack { display: flex; gap: 2px; height: 100%; min-width: 6px; }
+.prrow .seg { display: block; min-width: 4px; height: 100%; }
+.prrow .seg.unread { background: var(--brand); border-radius: 5px 0 0 5px; }
+.prrow .seg.read { background: var(--read-gray); border-radius: 0 5px 5px 0; }
+.prrow .seg:only-child { border-radius: 5px; }
+.prmore { align-self: flex-start; }
+@media (max-width: 720px) {
+  .prhead { display: none; }
+  .prrow { grid-template-columns: 1fr auto auto auto; }
+  .prrow .nm { grid-column: 1 / -1; font-weight: 600; }
+  .prrow .bar { grid-column: 1 / -1; }
+  .prrow .n { text-align: left; }
+  .prrow .lbl { display: inline; }
+  .prrow .n.tot::before { content: 'รวม '; color: var(--muted); font-weight: 400; }
+}
+/* เลือกช่วงวันที่ */
+.dates { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+.dates .field { display: flex; flex-direction: column; gap: 4px; }
+.dates input[type="date"] { height: 42px; }
+.rangenote { font-size: 14px; color: var(--muted); }

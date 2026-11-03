@@ -31,7 +31,7 @@ export default function App() {
         <Route path="/candidate/:id" element={<CandidateDetail />} />
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/logs" element={<RequireAuth roles={['Admin']}><Logs /></RequireAuth>} />
-        <Route path="/audit" element={<RequireAuth roles={['Admin']}><Audit /></RequireAuth>} />
+        <Route path="/audit" element={<Audit />} />
         <Route path="/admin" element={<RequireAuth roles={['Admin']}><Admin /></RequireAuth>} />
       </Route>
 

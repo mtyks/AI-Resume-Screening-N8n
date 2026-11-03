@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { csvCell, expFlag, itemNote, mustAvg } from './lib';
+import { addDays, bkkToday, csvCell, expFlag, fmtRangeTh, groupPeople, itemNote, mustAvg, presetRange } from './lib';
 import type { Candidate, Job } from './api';
 
 describe('csvCell', () => {
@@ -51,5 +51,38 @@ describe('mustAvg', () => {
   it('ข้อที่ไม่ถึงเกณฑ์นับตามจริง', () => {
     expect(mustAvg([{ confidence: 80 }, { confidence: 20 }])).toBe(60);
     expect(mustAvg([])).toBe(0);
+  });
+});
+
+describe('groupPeople', () => {
+  const mk = (id: string, email: string, name: string, pos: string, at: string) => ({
+    candidate: { candidate_id: id, full_name: name, phone_number: '0812345678', email, applied_position: pos, self_reported_experience_range: null, skills: [], resume_file_url: '', received_at: at, application_status: 'In Review', processing_status: 'processed' as const, processing_error: null, is_read: false, starred: false, hr_note: null },
+    job_id: 'J', threshold: 70, score: 80, gate: 'Pass', kind: 'pass' as const
+  });
+  it('รวมใบสมัครของอีเมลเดียวกัน (ไม่สนตัวพิมพ์) เป็นคนเดียว เรียงใหม่สุดก่อน', () => {
+    const r = groupPeople([mk('1', 'A@x.com', 'เอ', 'Backend', '2026-10-01'), mk('2', 'a@x.com', 'เอ', 'Frontend', '2026-10-05'), mk('3', 'b@x.com', 'บี', 'QA Tester', '2026-09-01')]);
+    expect(r).toHaveLength(2);
+    expect(r[0].applications.map((a) => a.candidate.candidate_id)).toEqual(['2', '1']);
+    expect(r[1].name).toBe('บี');
+  });
+});
+
+describe('ช่วงวันที่ Dashboard', () => {
+  it('addDays ข้ามเดือนและปีได้', () => {
+    expect(addDays('2026-11-01', -1)).toBe('2026-10-31');
+    expect(addDays('2026-01-01', -1)).toBe('2025-12-31');
+  });
+  it('bkkToday ใช้เวลาไทย (เลย 17:00 UTC = วันถัดไป)', () => {
+    expect(bkkToday(new Date('2026-11-03T18:30:00Z'))).toBe('2026-11-04');
+    expect(bkkToday(new Date('2026-11-03T16:30:00Z'))).toBe('2026-11-03');
+  });
+  it('presetRange: วันนี้ เมื่อวาน และ 7 วันล่าสุดนับรวมวันนี้', () => {
+    expect(presetRange('today', '2026-11-03')).toEqual({ from: '2026-11-03', to: '2026-11-03' });
+    expect(presetRange('yesterday', '2026-11-03')).toEqual({ from: '2026-11-02', to: '2026-11-02' });
+    expect(presetRange('7', '2026-11-03')).toEqual({ from: '2026-10-28', to: '2026-11-03' });
+  });
+  it('fmtRangeTh วันเดียวไม่ใส่ช่วง', () => {
+    expect(fmtRangeTh('2026-11-03', '2026-11-03')).not.toContain('–');
+    expect(fmtRangeTh('2026-10-28', '2026-11-03')).toContain('–');
   });
 });
