@@ -141,7 +141,7 @@ export default function Dashboard() {
             <Kpi label={`ผู้สมัครที่สแกน (${range})`} value={d.total} hint={<Delta cur={d.total} prev={d.prev_total} />} to="/positions" />
             <Kpi label="คะแนนจับคู่เฉลี่ย" value={d.avg_score === null ? '—' : d.avg_score.toFixed(1)} color={d.avg_score === null ? undefined : TONE_COLOR[scoreTone(d.avg_score)]}
               hint={<Delta cur={d.avg_score} prev={d.prev_avg_score} unit="pt" />} to="/positions" />
-            <Kpi label="เวลาสแกนเสร็จ (มัธยฐาน)" value={fmtDuration(d.median_minutes)} hint="นับจากใบสมัครเข้าระบบจนสแกนเสร็จ" to="/positions" />
+            <Kpi label="เวลาสแกนเสร็จ (มัธยฐาน)" value={fmtDuration(d.median_minutes)} hint="เวลาที่ AI ใช้สแกนจริง (ไม่นับเวลารอคิว)" to="/positions" />
             <Kpi label="ตำแหน่งที่เปิดรับ" value={d.active_openings} hint={`จากทั้งหมด ${all.length} ตำแหน่ง`} to="/positions" tone="accent" />
           </div>
 

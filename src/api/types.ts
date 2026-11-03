@@ -194,7 +194,7 @@ export interface DashboardSummary {
   prev_total: number;
   avg_score: number | null;
   prev_avg_score: number | null;
-  /** เวลามัธยฐานตั้งแต่ใบสมัครเข้าระบบจนสแกนเสร็จครั้งแรก (นาที) */
+  /** เวลามัธยฐานที่ AI ใช้สแกนจริงของรอบล่าสุด: เวลาเริ่มพยายามสแกน -> ประเมินเสร็จ (นาที ไม่รวมเวลารอคิว) */
   median_minutes: number | null;
   funnel: { applied: number; scanned: number; passed: number; interview: number; offer: number; hired: number; rejected: number };
   sources: { name: string; n: number }[];

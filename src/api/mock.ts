@@ -478,7 +478,7 @@ export const mockApi: Api = {
     const avg = (xs: number[]) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null);
     const mins = cur.map((c) => {
       const ev = store.matches.filter((x) => x.candidate_id === c.candidate_id).map((x) => new Date(x.evaluated_at).getTime());
-      return ev.length ? (Math.min(...ev) - new Date(c.received_at).getTime()) / 60000 : null;
+      return ev.length ? (Math.max(...ev) - new Date(c.received_at).getTime()) / 60000 : null; // โหมดสาธิต: ไม่มีเวลาเริ่มสแกนจริง
     }).filter((x): x is number => x !== null && x >= 0).sort((a, b) => a - b);
     const median = mins.length ? Math.round(mins[Math.floor(mins.length / 2)] * 10) / 10 : null;
     const dayKey = (t: number) => new Date(t + 7 * 3600000).toISOString().slice(0, 10);

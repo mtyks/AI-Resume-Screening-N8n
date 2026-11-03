@@ -170,7 +170,7 @@ export const TONE_COLOR: Record<ScoreTone, string> = { high: 'var(--accent)', mi
 /** เปลี่ยนนาทีเป็นข้อความอ่านง่าย */
 export function fmtDuration(min: number | null): string {
   if (min === null) return '—';
-  if (min < 1) return '< 1 นาที';
+  if (min < 1) return `${Math.max(1, Math.round(min * 60))} วินาที`;
   if (min < 60) return `${Math.round(min)} นาที`;
   if (min < 1440) return `${(min / 60).toFixed(1)} ชม.`;
   return `${(min / 1440).toFixed(1)} วัน`;
