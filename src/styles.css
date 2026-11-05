@@ -25,12 +25,25 @@
   --nav-muted: #a9d3bf;
   --nav-accent: #b7e35a;
 
-  --warn-bg: #fff1d1;
+  --warn-bg: #fff0c2;
   --warn-ink: #7a4a00;
-  --warn-bar: #d98a00;
-  --danger-bg: #fde4e8;
-  --danger-ink: #9c2339;
-  --danger-bar: #d6455d;
+  --warn-bar: #e0a000;
+  --danger-bg: #fde4ea;
+  --danger-ink: #9f1239;
+  --danger-bar: #be123c;
+
+  /* สีข้อมูลบน Dashboard (ตรวจด้วย validator แล้ว: แยกกันได้ทั้งสายตาปกติและตาบอดสี)
+     เขียว=ผ่าน · เหลืองอำพัน=ต่ำกว่าเกณฑ์ · แดง=ไม่ผ่าน Gate · เทา=รอประมวลผล · เทาเข้มลายเฉียง=สแกนล้มเหลว
+     น้ำเงิน=จำนวน/ยังไม่อ่าน (สีเขียวของแบรนด์ใช้กับเมนู/ปุ่มเท่านั้น ไม่ใช้เป็นสีข้อมูล) */
+  --st-pass: #15803d;
+  --st-below: #e0a000;
+  --st-gate: #be123c;
+  --st-pending: #b8c2cf;
+  --st-failed: #475569;
+  --c-volume: #2563eb;
+  --c-volume-2: #7aa5f5;
+  --c-unread: #2563eb;
+  --c-unread-ink: #1d4ed8;
   --info-bg: #e1f4ea;
   --info-ink: #08603f;
   --neutral-bg: #e8f0eb;
@@ -91,11 +104,18 @@ textarea.input { padding: 12px 14px; }
 /* ---------- ป้ายสถานะ ---------- */
 .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
 .pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .85; }
-.pill.pass { background: var(--accent-soft); color: var(--accent-ink); }
+.pill.pass { background: #d9f2e1; color: #0f5d2c; }
 .pill.below { background: var(--warn-bg); color: var(--warn-ink); }
 .pill.gate { background: var(--danger-bg); color: var(--danger-ink); }
-.pill.pending { background: var(--neutral-bg); color: var(--neutral-ink); }
-.pill.failed { background: #fff; color: var(--danger-ink); box-shadow: inset 0 0 0 1.5px var(--danger-ink); }
+.pill.pending { background: #e6eaef; color: #3f4b5a; }
+.pill.failed { background: var(--st-failed); color: #fff; }
+/* ไอคอนนำหน้าแต่ละสถานะ ให้แยกได้แม้มองไม่เห็นสี */
+.pill.pass::before, .pill.below::before, .pill.gate::before, .pill.pending::before, .pill.failed::before { width: auto; height: auto; border-radius: 0; background: none; font-size: 12px; line-height: 1; opacity: 1; }
+.pill.pass::before { content: '✓'; }
+.pill.below::before { content: '▲'; }
+.pill.gate::before { content: '✕'; }
+.pill.pending::before { content: '…'; }
+.pill.failed::before { content: '!'; font-weight: 800; }
 .pill.info { background: var(--info-bg); color: var(--info-ink); }
 .chip { font-size: 12.5px; background: var(--neutral-bg); color: var(--neutral-ink); border-radius: 999px; padding: 3px 11px; }
 .tab { height: 42px; padding: 0 18px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; font-size: 14.5px; font-weight: 500; cursor: pointer; transition: background .15s; }
@@ -298,7 +318,9 @@ textarea.input { padding: 12px 14px; }
 .dash-sum { display: flex; flex-direction: column; gap: 12px; }
 .dash-sum-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
 .dash-sum-head h2 { font-size: 17px; font-weight: 700; }
-.obar { display: flex; width: 100%; min-width: 80px; border-radius: 999px; overflow: hidden; background: var(--neutral-bg); }
+.obar { display: flex; gap: 2px; width: 100%; min-width: 80px; border-radius: 999px; overflow: hidden; background: transparent; }
+.obar > span { min-width: 3px; }
+.obar > span.failed { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.55) 0 2px, transparent 2px 5px); }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13.5px; color: var(--muted); }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
 .sortsel { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
@@ -309,12 +331,12 @@ a.prow:hover { background: var(--neutral-bg); }
 .prow.phead { font-size: 12.5px; color: var(--muted); padding-top: 10px; padding-bottom: 10px; }
 .prow .pname { display: flex; flex-direction: column; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
 .prow .num { font-variant-numeric: tabular-nums; font-weight: 600; }
-.prow .num small { display: block; font-weight: 400; font-size: 12.5px; color: var(--brand); }
+.prow .num small { display: block; font-weight: 400; font-size: 12.5px; color: var(--c-unread-ink); }
 .prow .urgent { color: var(--danger-bar); font-weight: 600; }
 .hdot { font-size: 13px; font-weight: 500; }
 .hdot i { font-style: normal; margin-right: 5px; }
 .hdot.bad { color: var(--danger-bar); }
-.hdot.warn { color: #9a5b00; }
+.hdot.warn { color: #8a5300; }
 .spread { position: relative; display: flex; align-items: flex-end; gap: 2px; height: 28px; width: 100px; }
 .spread .bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 2px; }
 .spread .thr { position: absolute; top: -2px; bottom: -2px; width: 0; border-left: 2px dashed var(--ink, #1f2a24); opacity: .55; }
@@ -342,7 +364,8 @@ a.prow:hover { background: var(--neutral-bg); }
 .kpi .h .up { color: var(--accent); font-weight: 600; }
 .kpi .h .down { color: var(--danger-bar); font-weight: 600; }
 .todo { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; padding: 12px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); font-size: 14.5px; }
-.todo a { color: var(--brand); font-weight: 600; text-decoration: none; }
+.todo a { color: var(--c-unread-ink); font-weight: 600; text-decoration: none; }
+.todo a.warnlink { color: var(--danger-ink); }
 .dgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .dcard { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .dcard.span2 { grid-column: 1 / -1; }
@@ -353,7 +376,7 @@ a.prow:hover { background: var(--neutral-bg); }
 .hbars li { display: grid; grid-template-columns: minmax(80px, 38%) 1fr 28px; gap: 10px; align-items: center; font-size: 14px; }
 .hbars .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hbars .track { height: 10px; border-radius: 999px; background: var(--neutral-bg); overflow: hidden; }
-.hbars .track span { display: block; height: 100%; background: var(--brand); border-radius: 999px; }
+.hbars .track span { display: block; height: 100%; background: var(--c-volume); border-radius: 999px; }
 .hbars .n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .funnel { display: flex; flex-direction: column; gap: 10px; }
 .fstage .fbar { height: 14px; border-radius: 7px; margin-bottom: 4px; transition: width .3s; }
@@ -381,7 +404,7 @@ a.prow:hover { background: var(--neutral-bg); }
 @media (max-width: 720px) { .approw { grid-template-columns: 1fr; } }
 
 /* ผู้สมัครรายตำแหน่ง (แท่งซ้อน อ่านแล้ว/ยังไม่อ่าน) */
-:root { --read-gray: #8fa89b; }
+:root { --read-gray: #b8c2cf; }
 .prchart { display: flex; flex-direction: column; gap: 12px; }
 .prsummary { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; align-items: center; font-size: 14px; }
 .prrows { list-style: none; margin: 0; padding: 0; }
@@ -391,12 +414,12 @@ a.prow:hover { background: var(--neutral-bg); }
 .prrow .nm { overflow-wrap: anywhere; }
 .prrow .n { text-align: right; font-variant-numeric: tabular-nums; }
 .prrow .n.tot { font-weight: 700; }
-.prrow .n.hot { color: var(--brand); font-weight: 700; }
+.prrow .n.hot { color: var(--c-unread-ink); font-weight: 700; }
 .prrow .lbl { display: none; font-style: normal; color: var(--muted); font-weight: 400; }
 .prrow .bar { display: flex; height: 16px; min-width: 0; }
 .prrow .stack { display: flex; gap: 2px; height: 100%; min-width: 6px; }
 .prrow .seg { display: block; min-width: 4px; height: 100%; }
-.prrow .seg.unread { background: var(--brand); border-radius: 5px 0 0 5px; }
+.prrow .seg.unread { background: var(--c-unread); border-radius: 5px 0 0 5px; }
 .prrow .seg.read { background: var(--read-gray); border-radius: 0 5px 5px 0; }
 .prrow .seg:only-child { border-radius: 5px; }
 .prmore { align-self: flex-start; }
@@ -414,3 +437,5 @@ a.prow:hover { background: var(--neutral-bg); }
 .dates .field { display: flex; flex-direction: column; gap: 4px; }
 .dates input[type="date"] { height: 42px; }
 .rangenote { font-size: 14px; color: var(--muted); }
+
+.legend i.hatch { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.55) 0 2px, transparent 2px 5px); }

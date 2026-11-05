@@ -64,11 +64,11 @@ export const KIND_LABEL: Record<RowKind, string> = {
 };
 
 export const KIND_BAR: Record<RowKind, string> = {
-  pass: 'var(--accent)',
-  below: 'var(--warn-bar)',
-  gate: 'var(--danger-bar)',
-  pending: 'var(--muted)',
-  failed: 'var(--muted)'
+  pass: 'var(--st-pass)',
+  below: 'var(--st-below)',
+  gate: 'var(--st-gate)',
+  pending: 'var(--st-pending)',
+  failed: 'var(--st-failed)'
 };
 
 /** ความมั่นใจขั้นต่ำที่ถือว่า "พบทักษะ" (ตรงกับค่า GATE_MIN ใน n8n โหนด 5.1) */
@@ -219,12 +219,14 @@ export function downloadCsv(filename: string, rows: unknown[][]): void {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-/** โทนสีคะแนน: สูง ≥ 80 เขียว, กลาง 60–79 เหลือง, ต่ำ < 60 เทา */
+/** โทนสีคะแนน: สูง ≥ 80 เขียว, กลาง 60–79 เหลืองอำพัน, ต่ำ < 60 แดง */
 export type ScoreTone = 'high' | 'mid' | 'low';
 export function scoreTone(score: number): ScoreTone {
   return score >= 80 ? 'high' : score >= 60 ? 'mid' : 'low';
 }
-export const TONE_COLOR: Record<ScoreTone, string> = { high: 'var(--accent)', mid: 'var(--warn-bar)', low: '#9aa5a0' };
+export const TONE_COLOR: Record<ScoreTone, string> = { high: 'var(--st-pass)', mid: 'var(--st-below)', low: 'var(--st-gate)' };
+/** สีตัวอักษรของโทนเดียวกัน (เข้มพอให้อ่านบนพื้นขาว; สีเหลืองอำพันใช้เป็นตัวอักษรตรง ๆ ไม่ได้) */
+export const TONE_INK: Record<ScoreTone, string> = { high: '#15803d', mid: '#8a5300', low: '#be123c' };
 
 /** เปลี่ยนนาทีเป็นข้อความอ่านง่าย */
 export function fmtDuration(min: number | null): string {

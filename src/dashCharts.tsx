@@ -21,11 +21,11 @@ export function InflowChart({ data }: { data: DashboardSummary['inflow'] }) {
     <figure className="chart" aria-label={`ผู้สมัครรายวัน รวม ${total} คน`}>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-hidden={false}>
         {ticks.map((t) => (<g key={t}><line x1={L} x2={W - R} y1={y(t)} y2={y(t)} stroke="var(--line)" strokeWidth="1" /><text x={L - 6} y={y(t) + 4} textAnchor="end" fontSize="11" fill="var(--muted)">{t}</text></g>))}
-        <path d={area} fill="var(--brand)" opacity=".08" />
-        <path d={line} fill="none" stroke="var(--brand)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={area} fill="var(--c-volume)" opacity=".10" />
+        <path d={line} fill="none" stroke="var(--c-volume)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
         {data.map((p, i) => (
           <g key={p.d}>
-            {(data.length <= 31 || p.n > 0) && <circle cx={x(i)} cy={y(p.n)} r={p.n > 0 ? 3.6 : 2} fill={p.n > 0 ? 'var(--brand)' : '#fff'} stroke="var(--brand)" strokeWidth="1.5"><title>{`${fmtDay(p.d)}: ${p.n} คน`}</title></circle>}
+            {(data.length <= 31 || p.n > 0) && <circle cx={x(i)} cy={y(p.n)} r={p.n > 0 ? 3.6 : 2} fill={p.n > 0 ? 'var(--c-volume)' : '#fff'} stroke="var(--c-volume)" strokeWidth="1.5"><title>{`${fmtDay(p.d)}: ${p.n} คน`}</title></circle>}
             {i % step === 0 && <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="11" fill="var(--muted)">{fmtDay(p.d)}</text>}
           </g>
         ))}
@@ -55,9 +55,9 @@ export function SkillsChart({ data, total, empty = 'ยังไม่มีข�
 /** Funnel: สมัคร → สแกนแล้ว → ผ่านเกณฑ์ → สัมภาษณ์ → ข้อเสนอ → รับเข้าทำงาน พร้อมอัตราที่หายไปในแต่ละขั้น */
 export function Funnel({ f }: { f: DashboardSummary['funnel'] }) {
   const stages: [string, number, string][] = [
-    ['สมัครทั้งหมด', f.applied, 'var(--brand)'], ['สแกนเสร็จแล้ว', f.scanned, 'var(--brand)'],
-    ['ผ่านเกณฑ์', f.passed, 'var(--accent)'], ['นัดสัมภาษณ์', f.interview, 'var(--accent)'],
-    ['ยื่นข้อเสนอ', f.offer, 'var(--accent)'], ['รับเข้าทำงาน', f.hired, 'var(--accent)']
+    ['สมัครทั้งหมด', f.applied, 'var(--c-volume)'], ['สแกนเสร็จแล้ว', f.scanned, 'var(--c-volume-2)'],
+    ['ผ่านเกณฑ์', f.passed, 'var(--st-pass)'], ['นัดสัมภาษณ์', f.interview, 'var(--st-pass)'],
+    ['ยื่นข้อเสนอ', f.offer, 'var(--st-pass)'], ['รับเข้าทำงาน', f.hired, 'var(--st-pass)']
   ];
   const base = Math.max(1, f.applied);
   return (
@@ -67,7 +67,7 @@ export function Funnel({ f }: { f: DashboardSummary['funnel'] }) {
         const drop = prev && prev > 0 ? Math.round(((prev - n) / prev) * 100) : null;
         return (
           <div className="fstage" key={label}>
-            <div className="fbar" style={{ width: `${Math.max(n ? 6 : 0, (n / base) * 100)}%`, background: color, opacity: 1 - i * 0.1 }} />
+            <div className="fbar" style={{ width: `${Math.max(n ? 6 : 0, (n / base) * 100)}%`, background: color }} />
             <div className="ftxt"><b>{n}</b> {label}{drop !== null && drop > 0 && <span className="fdrop">หายไป {drop}%</span>}</div>
           </div>
         );
@@ -77,7 +77,7 @@ export function Funnel({ f }: { f: DashboardSummary['funnel'] }) {
   );
 }
 
-/** การกระจายคะแนน 10 ช่วง แท่งสีตามระดับ: เขียว ≥ 80, เหลือง 60–79, เทา < 60 */
+/** การกระจายคะแนน 10 ช่วง แท่งสีตามระดับ: เขียว ≥ 80, เหลืองอำพัน 60–79, แดง < 60 */
 export function ScoreSpread({ buckets }: { buckets: number[] }) {
   const max = Math.max(1, ...buckets);
   const sum = buckets.reduce((a, b) => a + b, 0);
@@ -103,7 +103,7 @@ export function ScoreSpread({ buckets }: { buckets: number[] }) {
 }
 
 /**
- * ผู้สมัครรายตำแหน่ง: แท่งซ้อนแนวนอน ยังไม่อ่าน (เขียวเข้ม) + อ่านแล้ว (เทา)
+ * ผู้สมัครรายตำแหน่ง: แท่งซ้อนแนวนอน ยังไม่อ่าน (น้ำเงิน) + อ่านแล้ว (เทา)
  * ความยาวรวมของแท่ง = จำนวนผู้สมัครของตำแหน่ง เทียบกับตำแหน่งที่มากที่สุด ตัวเลขทุกแถวแสดงเป็นคอลัมน์ข้างแท่ง (ไม่ใช้สีอย่างเดียว)
  * ตำแหน่งที่ยังไม่มีผู้สมัครซ่อนไว้ใต้ปุ่ม เพื่อไม่ให้รายการยาวเกินจำเป็น
  */
@@ -118,10 +118,10 @@ export function PositionReadChart({ rows }: { rows: PositionReadStat[] }) {
     <div className="prchart">
       <div className="prsummary">
         <div className="legend">
-          <span><i style={{ background: 'var(--brand)' }} />ยังไม่อ่าน</span>
+          <span><i style={{ background: 'var(--c-unread)' }} />ยังไม่อ่าน</span>
           <span><i style={{ background: 'var(--read-gray)' }} />อ่านแล้ว</span>
         </div>
-        <span className="muted">รวม <b>{sum.total}</b> คน · อ่านแล้ว <b>{sum.read}</b> · ยังไม่อ่าน <b style={{ color: 'var(--brand)' }}>{sum.unread}</b></span>
+        <span className="muted">รวม <b>{sum.total}</b> คน · อ่านแล้ว <b>{sum.read}</b> · ยังไม่อ่าน <b style={{ color: 'var(--c-unread-ink)' }}>{sum.unread}</b></span>
       </div>
       {withApps.length === 0 && <div className="chart-empty static">ยังไม่มีผู้สมัครในช่วงวันที่นี้</div>}
       {shown.length > 0 && (

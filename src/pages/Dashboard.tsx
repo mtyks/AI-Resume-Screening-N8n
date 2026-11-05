@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import { RANGE_PRESETS, TONE_COLOR, addDays, bkkToday, fmtDuration, fmtRangeTh, pctChange, presetRange, scoreTone, useAsync, type RangePreset } from '../lib';
+import { RANGE_PRESETS, TONE_INK, addDays, bkkToday, fmtDuration, fmtRangeTh, pctChange, presetRange, scoreTone, useAsync, type RangePreset } from '../lib';
 import { Funnel, InflowChart, PositionReadChart, ScoreSpread, SkillsChart } from '../dashCharts';
 import { useStats } from '../stats';
 import type { PositionStat } from '../api';
@@ -45,13 +45,13 @@ function Kpi({ label, value, hint, to, tone, color }: { label: string; value: st
 function OutcomeBar({ s, height = 10 }: { s: Pick<PositionStat, 'passed' | 'below' | 'gate' | 'pending' | 'failed' | 'total'>; height?: number }) {
   if (s.total === 0) return <span className="muted">—</span>;
   const parts: [string, number, string][] = [
-    ['ผ่านเกณฑ์', s.passed, 'var(--accent)'], ['ต่ำกว่าเกณฑ์', s.below, 'var(--warn-bar)'], ['ไม่ผ่าน Gate', s.gate, 'var(--danger-bar)'],
-    ['รอประมวลผล', s.pending, 'var(--line)'], ['ล้มเหลว', s.failed, 'var(--muted)']
+    ['ผ่านเกณฑ์', s.passed, 'var(--st-pass)'], ['ต่ำกว่าเกณฑ์', s.below, 'var(--st-below)'], ['ไม่ผ่าน Gate', s.gate, 'var(--st-gate)'],
+    ['รอประมวลผล', s.pending, 'var(--st-pending)'], ['ล้มเหลว', s.failed, 'var(--st-failed)']
   ];
   const label = parts.filter((p) => p[1] > 0).map((p) => `${p[0]} ${p[1]}`).join(' · ');
   return (
     <span className="obar" style={{ height }} role="img" aria-label={label} title={label}>
-      {parts.map(([n, v, c]) => v > 0 && <span key={n} style={{ width: `${(v / s.total) * 100}%`, background: c }} />)}
+      {parts.map(([n, v, c]) => v > 0 && <span key={n} className={n === 'ล้มเหลว' ? 'failed' : undefined} style={{ width: `${(v / s.total) * 100}%`, background: c }} />)}
     </span>
   );
 }
@@ -65,7 +65,7 @@ function Spread({ buckets, threshold }: { buckets: number[]; threshold: number }
   return (
     <span className="spread" role="img" aria-label={`การกระจายคะแนน เกณฑ์ผ่าน ${threshold}`} title={title}>
       {buckets.map((n, i) => (
-        <span key={i} className="bar" style={{ height: `${Math.max(n ? 12 : 4, (n / max) * 100)}%`, background: i * 10 >= threshold ? 'var(--accent)' : 'var(--line-strong, #cfd6d2)' }} />
+        <span key={i} className="bar" style={{ height: `${Math.max(n ? 12 : 4, (n / max) * 100)}%`, background: i * 10 >= threshold ? 'var(--st-pass)' : 'var(--st-below)' }} />
       ))}
       <span className="thr" style={{ left: `${Math.min(100, threshold)}%` }} />
     </span>
@@ -160,17 +160,17 @@ export default function Dashboard() {
         <>
           <div className="kpis">
             <Kpi label={`ผู้สมัครที่เข้ามา (${rangeText})`} value={d.total} hint={<Delta cur={d.total} prev={d.prev_total} />} to="/positions" />
-            <Kpi label="คะแนนจับคู่เฉลี่ย" value={d.avg_score === null ? '—' : d.avg_score.toFixed(1)} color={d.avg_score === null ? undefined : TONE_COLOR[scoreTone(d.avg_score)]}
+            <Kpi label="คะแนนจับคู่เฉลี่ย" value={d.avg_score === null ? '—' : d.avg_score.toFixed(1)} color={d.avg_score === null ? undefined : TONE_INK[scoreTone(d.avg_score)]}
               hint={<Delta cur={d.avg_score} prev={d.prev_avg_score} unit="pt" />} to="/positions" />
             <Kpi label="เวลาสแกนเสร็จ (มัธยฐาน)" value={fmtDuration(d.median_minutes)} hint="เวลาที่ AI ใช้สแกนจริง (ไม่นับเวลารอคิว)" to="/positions" />
-            <Kpi label="ตำแหน่งที่เปิดรับ" value={d.active_openings} hint={`จากทั้งหมด ${all.length} ตำแหน่ง`} to="/positions" tone="accent" />
+            <Kpi label="ตำแหน่งที่เปิดรับ" value={d.active_openings} hint={`จากทั้งหมด ${all.length} ตำแหน่ง`} to="/positions" />
           </div>
 
           {(unread > 0 || failed > 0) && (
             <div className="todo">
               <b>ต้องทำ:</b>
               {unread > 0 && <Link to={job ? `/positions/${job}` : '/positions'}>ยังไม่อ่าน {unread} คน →</Link>}
-              {failed > 0 && <Link to={job ? `/positions/${job}` : '/positions'} style={{ color: 'var(--danger-bar)' }}>สแกนล้มเหลว {failed} คน →</Link>}
+              {failed > 0 && <Link className="warnlink" to={job ? `/positions/${job}` : '/positions'}>สแกนล้มเหลว {failed} คน →</Link>}
             </div>
           )}
 
@@ -223,6 +223,15 @@ export default function Dashboard() {
               </label>
             </div>
           </div>
+          {sorted.length > 0 && (
+            <div className="legend" style={{ padding: '0 20px 10px' }} aria-label="คำอธิบายสีผลการสแกน">
+              <span><i style={{ background: 'var(--st-pass)' }} />ผ่านเกณฑ์</span>
+              <span><i style={{ background: 'var(--st-below)' }} />ต่ำกว่าเกณฑ์</span>
+              <span><i style={{ background: 'var(--st-gate)' }} />ไม่ผ่าน Gate</span>
+              <span><i style={{ background: 'var(--st-pending)' }} />รอประมวลผล</span>
+              <span><i className="hatch" style={{ background: 'var(--st-failed)' }} />สแกนล้มเหลว</span>
+            </div>
+          )}
           {sorted.length === 0 && <div className="empty">ไม่มีตำแหน่งที่เปิดรับ</div>}
           {sorted.length > 0 && (
             <div className="ptable" role="table" aria-label="สุขภาพรายตำแหน่ง">
@@ -242,7 +251,7 @@ export default function Dashboard() {
                     <span role="cell" className="num">{s.total}{s.unread > 0 && <small>ใหม่ {s.unread}</small>}</span>
                     <span role="cell"><OutcomeBar s={s} /></span>
                     <span role="cell"><Spread buckets={s.buckets} threshold={s.match_threshold} /></span>
-                    <span role="cell" className="num" style={s.avg_score !== null ? { color: TONE_COLOR[scoreTone(s.avg_score)] } : undefined}>{s.avg_score ?? '—'}</span>
+                    <span role="cell" className="num" style={s.avg_score !== null ? { color: TONE_INK[scoreTone(s.avg_score)] } : undefined}>{s.avg_score ?? '—'}</span>
                     <span role="cell" className={c.urgent ? 'urgent' : 'muted'}>{c.text}</span>
                   </Link>
                 );
