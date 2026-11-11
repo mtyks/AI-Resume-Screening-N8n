@@ -25,11 +25,12 @@ const LABEL: Record<string, string> = {
   user_add: 'เพิ่มผู้ใช้',
   user_role: 'เปลี่ยนบทบาทผู้ใช้',
   user_remove: 'ลบผู้ใช้',
-  config_change: 'เปลี่ยนค่าตั้งระบบ'
+  config_change: 'เปลี่ยนค่าตั้งระบบ',
+  issue_report: 'HR แจ้งปัญหาระบบ'
 };
 
 /** การกระทำที่ target คือรหัสผู้สมัครและยังกดไปดูได้ */
-const CANDIDATE_ACTIONS = new Set(['status_change', 'note_edit', 'rescan']);
+const CANDIDATE_ACTIONS = new Set(['status_change', 'note_edit', 'rescan', 'issue_report']);
 
 const FIELD_LABEL: Record<string, string> = {
   position_name: 'ชื่อตำแหน่ง', must_have_skills: 'ทักษะที่ต้องมี', preferred_skills: 'ทักษะที่ควรมี', required_tools: 'เครื่องมือ',
@@ -51,6 +52,7 @@ export function describeAudit(e: AuditEntry): string {
   const d = (e.detail ?? {}) as Record<string, unknown>;
   const st = (s: unknown) => STATUS_LABEL[String(s)] ?? String(s ?? '');
   switch (e.action) {
+    case 'issue_report': return String(d.message ?? '');
     case 'status_change': return `${st(d.from)} → ${st(d.to)}`;
     case 'bulk_status': return `${st(e.target)} · เปลี่ยน ${String(d.changed ?? '?')} คน${d.notify ? ' (แจ้งอีเมล)' : ''}`;
     case 'data_request_delete': return `${e.target ?? ''} · ลบ ${String(d.candidates ?? 0)} ใบสมัคร`;

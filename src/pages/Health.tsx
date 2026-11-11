@@ -60,6 +60,9 @@ export default function Health() {
   const q = useAsync(() => api.listFailedCandidates(), []);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [report, setReport] = useState<{ id: string | null; text: string } | null>(null);
+  const [sending, setSending] = useState(false);
+  const [mailTo, setMailTo] = useState<string[]>([]);
   const reloadH = h.reload;
   const reloadQ = q.reload;
   useEffect(() => { const id = setInterval(() => { reloadH(); reloadQ(); }, 60_000); return () => clearInterval(id); }, [reloadH, reloadQ]);
@@ -68,6 +71,24 @@ export default function Health() {
   const todo: Candidate[] = (q.data ?? []).filter((c) => c.processing_status === 'failed' || (c.processing_status === 'pending' && minutesSince(c.received_at) > 15));
   const level: Tone = !d ? 'ok' : d.stuck > 0 ? 'err' : issues.length > 0 || todo.length > 0 ? 'warn' : 'ok';
   const headline = level === 'err' ? 'ระบบมีรายการค้าง ต้องตรวจสอบ' : level === 'warn' ? 'ระบบทำงานอยู่ แต่มีรายการที่ต้องดำเนินการ' : 'ระบบทำงานปกติ';
+
+  function openReport(c: Candidate | null) {
+    setMsg(null);
+    if (!c) { setReport({ id: null, text: 'ปัญหาที่พบ: \nเกิดขึ้นเมื่อ: \nสิ่งที่ได้ลองทำแล้ว: ' }); }
+    else {
+      const e = c.processing_status === 'failed' ? explainError(c.processing_error) : { cause: 'รอคิวนานกว่าปกติ', action: '' };
+      setReport({ id: c.candidate_id, text: `ผู้สมัคร: ${c.full_name} (${c.candidate_id})\nตำแหน่ง: ${c.applied_position}\nสถานะ: ${c.processing_status === 'failed' ? 'ประมวลผลไม่สำเร็จ' : `รอประมวลผลมา ${waitText(minutesSince(c.received_at))}`}\nสาเหตุที่ระบบแสดง: ${e.cause}${c.processing_error ? `\nข้อความทางเทคนิค: ${c.processing_error}` : ''}\nสแกนซ้ำแล้วยังไม่หาย: ใช่/ไม่ใช่\nรายละเอียดเพิ่มเติม: ` });
+    }
+    api.adminContacts().then(setMailTo).catch(() => setMailTo([]));
+  }
+
+  async function sendReport() {
+    if (!report) return;
+    setSending(true); setMsg(null);
+    try { await api.reportIssue(report.id, report.text.trim()); setMsg('ส่งแจ้ง Admin แล้ว (Admin จะเห็นในเมนู “ประวัติการใช้งาน”) หากเร่งด่วนให้กด “เปิดอีเมลถึง Admin” ด้วย'); setReport(null); }
+    catch (e) { setMsg(e instanceof Error ? e.message : 'ส่งแจ้งไม่สำเร็จ'); }
+    setSending(false);
+  }
 
   async function retry(id: string) {
     setBusy(id); setMsg(null);
@@ -93,8 +114,24 @@ export default function Health() {
           </div>
 
           <section className="card" style={{ padding: '14px 18px', borderRadius: 12 }} aria-labelledby="todo-h">
-            <h2 id="todo-h" style={{ margin: '0 0 8px', fontSize: 18 }}>รายการที่ต้องดำเนินการ ({todo.length})</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <h2 id="todo-h" style={{ margin: 0, fontSize: 18 }}>รายการที่ต้องดำเนินการ ({todo.length})</h2>
+              <button type="button" className="btn small" onClick={() => openReport(null)}>แจ้งปัญหาอื่นให้ Admin</button>
+            </div>
             {msg && <div role="status" className="alert ok" style={{ marginBottom: 8 }}>{msg}</div>}
+            {report && (
+              <div className="card" style={{ padding: 14, borderRadius: 12, marginBottom: 12, display: 'grid', gap: 8 }}>
+                <b>แจ้งปัญหาให้ Admin{report.id ? ` (${report.id})` : ''}</b>
+                <label htmlFor="rep" className="muted" style={{ fontSize: 13.5 }}>ตรวจและเพิ่มรายละเอียดก่อนส่ง ข้อความนี้จะถูกบันทึกในประวัติการใช้งานที่ Admin เปิดดูได้</label>
+                <textarea id="rep" className="input" rows={8} maxLength={1000} style={{ height: 'auto', padding: 10 }} value={report.text} onChange={(e) => setReport({ ...report, text: e.target.value })} />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  <button type="button" className="btn primary small" disabled={sending || !report.text.trim()} onClick={() => void sendReport()}>{sending ? 'กำลังส่ง…' : 'ส่งแจ้ง Admin'}</button>
+                  <a className="btn small" href={`mailto:${mailTo.join(',')}?subject=${encodeURIComponent('[Resume Screening] แจ้งปัญหาระบบประมวลผล' + (report.id ? ' ' + report.id : ''))}&body=${encodeURIComponent(report.text)}`}>เปิดอีเมลถึง Admin</a>
+                  <button type="button" className="btn small" onClick={() => void navigator.clipboard?.writeText(report.text).then(() => setMsg('คัดลอกข้อความแล้ว'))}>คัดลอกข้อความ</button>
+                  <button type="button" className="btn small" onClick={() => setReport(null)}>ยกเลิก</button>
+                </div>
+              </div>
+            )}
             {q.loading && !q.data ? <Loading /> : todo.length === 0 ? (
               <p className="muted" style={{ margin: 0 }}>ไม่มีใบสมัครที่ค้างหรือประมวลผลไม่สำเร็จ</p>
             ) : (
@@ -117,7 +154,10 @@ export default function Health() {
                             <div style={{ overflowWrap: 'anywhere', minWidth: 0 }}>{c.candidate_id}: {c.processing_error}</div></details>
                         )}
                       </div>
-                      <button type="button" className="btn small" disabled={busy === c.candidate_id} onClick={() => void retry(c.candidate_id)}>{busy === c.candidate_id ? 'กำลังส่ง…' : 'สแกนซ้ำ'}</button>
+                      <div style={{ display: 'grid', gap: 6, justifyItems: 'stretch' }}>
+                        <button type="button" className="btn small" disabled={busy === c.candidate_id} onClick={() => void retry(c.candidate_id)}>{busy === c.candidate_id ? 'กำลังส่ง…' : 'สแกนซ้ำ'}</button>
+                        <button type="button" className="btn small" title="ส่งรายละเอียดให้ Admin ช่วยแก้ไข" onClick={() => openReport(c)}>แจ้ง Admin</button>
+                      </div>
                     </div>
                   );
                 })}

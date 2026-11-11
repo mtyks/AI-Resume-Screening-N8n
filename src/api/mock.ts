@@ -699,6 +699,16 @@ export const mockApi: Api = {
     if (r) { r.status = 'rejected'; r.handled_at = new Date().toISOString(); r.handled_by = 'demo@example.com'; }
   },
 
+  async reportIssue(candidateId, message) {
+    await sleep(NET);
+    auditLocal.unshift({ id: Date.now(), at: new Date().toISOString(), actor: 'demo@example.com', action: 'issue_report', target: candidateId || null, detail: { message } });
+  },
+
+  async adminContacts() {
+    await sleep(NET);
+    return ['admin@example.com'];
+  },
+
   async systemHealth(): Promise<SystemHealth> {
     await sleep(NET);
     const cs = store.candidates;

@@ -314,6 +314,14 @@ export const supabaseApi: Api = {
     ok(await sb().rpc('cancel_interview', { p_id: id, p_notify: notify }));
   },
 
+  async reportIssue(candidateId: string | null, message: string): Promise<void> {
+    ok(await sb().rpc('report_issue', { p_candidate_id: candidateId ?? '', p_message: message }));
+  },
+
+  async adminContacts(): Promise<string[]> {
+    return (ok(await sb().rpc('admin_contacts')) as string[] | null) ?? [];
+  },
+
   async systemHealth(): Promise<SystemHealth> {
     return ok(await sb().rpc('system_health')) as SystemHealth;
   },

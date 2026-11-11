@@ -98,6 +98,10 @@ export interface Api {
 
   // สุขภาพระบบและการตรวจเทียบ (HR/Admin)
   systemHealth(): Promise<SystemHealth>;
+  /** HR แจ้งปัญหาให้ Admin (บันทึกในประวัติการใช้งาน) candidateId ว่างได้ถ้าเป็นปัญหาทั่วไป */
+  reportIssue(candidateId: string | null, message: string): Promise<void>;
+  /** อีเมลของ Admin ทั้งหมด ใช้เปิดอีเมลแจ้งปัญหา */
+  adminContacts(): Promise<string[]>;
   calibrationSummary(jobId: string | null): Promise<Calibration>;
 
   // ผู้ใช้และการตั้งค่า (Admin)
