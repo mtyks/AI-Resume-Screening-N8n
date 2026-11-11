@@ -3,6 +3,8 @@ import type {
   AuditEntry,
   Calibration,
   DataRequest,
+  Interview,
+  InterviewInput,
   SystemHealth,
   ApplicantItem,
   ApplicantKind,
@@ -360,6 +362,7 @@ const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
 // คำขอลบข้อมูลในโหมดทดลอง (เก็บในหน่วยความจำ)
 const requestsLocal: DataRequest[] = [];
+const interviewsLocal: Interview[] = [];
 
 export const mockApi: Api = {
   async listOpenPositions() {
@@ -628,6 +631,29 @@ export const mockApi: Api = {
     c.application_status = status;
     persist();
     return { changed: true, queued: notify && Boolean(c.email) };
+  },
+
+  async getInterview(candidateId) {
+    await sleep(NET / 2);
+    return interviewsLocal.find((i) => i.candidate_id === candidateId && i.status === 'scheduled') ?? null;
+  },
+
+  async scheduleInterview(candidateId: string, input: InterviewInput, notify: boolean) {
+    await sleep(NET / 2);
+    if (new Date(input.starts_at).getTime() < Date.now() - 5 * 60000) throw new Error('กรุณาเลือกวันเวลาในอนาคต');
+    const c = store.candidates.find((x) => x.candidate_id === candidateId);
+    if (!c) throw new Error('ไม่พบผู้สมัคร');
+    const sent = notify && Boolean(c.email) ? null : new Date().toISOString();
+    const cur = interviewsLocal.find((i) => i.candidate_id === candidateId && i.status === 'scheduled');
+    if (cur) Object.assign(cur, { ...input, location: input.location || null, note: input.note || null, confirm_sent_at: sent });
+    else interviewsLocal.push({ id: interviewsLocal.length + 1, candidate_id: candidateId, ...input, location: input.location || null, note: input.note || null, status: 'scheduled', created_by: 'demo', confirm_sent_at: sent, attempts: 0 });
+    if (c.application_status === 'In Review') { c.application_status = 'Interview'; persist(); }
+  },
+
+  async cancelInterview(id: number) {
+    await sleep(NET / 2);
+    const i = interviewsLocal.find((x) => x.id === id);
+    if (i) i.status = 'cancelled';
   },
 
   async setApplicationStatusMany(ids, status, notify = true) {

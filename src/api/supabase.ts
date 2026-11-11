@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Api } from './api';
 import type {
   ApplicantItem, ApplicantPage, ApplicationInput, PersonApplication, AuthorizedUser, Candidate, Job, MatchResult,
-  AuditEntry, Calibration, DashboardSummary, DataRequest, SystemHealth, OpenPosition, PositionStat, Role, SubmitResult, SystemConfig, SystemLog
+  AuditEntry, Calibration, DashboardSummary, DataRequest, Interview, InterviewInput, SystemHealth, OpenPosition, PositionStat, Role, SubmitResult, SystemConfig, SystemLog
 } from './types';
 
 const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -296,6 +296,22 @@ export const supabaseApi: Api = {
 
   async rejectDataRequest(id) {
     ok(await sb().rpc('reject_data_request', { p_id: id }));
+  },
+
+  async getInterview(candidateId: string): Promise<Interview | null> {
+    const rows = (ok(await sb().from('interviews').select('*').eq('candidate_id', candidateId).eq('status', 'scheduled').limit(1)) ?? []) as Interview[];
+    return rows[0] ?? null;
+  },
+
+  async scheduleInterview(candidateId: string, input: InterviewInput, notify: boolean) {
+    ok(await sb().rpc('schedule_interview', {
+      p_candidate_id: candidateId, p_starts_at: input.starts_at, p_duration: input.duration_min, p_mode: input.mode,
+      p_location: input.location, p_note: input.note, p_notify: notify
+    }));
+  },
+
+  async cancelInterview(id: number, notify: boolean) {
+    ok(await sb().rpc('cancel_interview', { p_id: id, p_notify: notify }));
   },
 
   async systemHealth(): Promise<SystemHealth> {

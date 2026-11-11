@@ -18,6 +18,8 @@ import type {
   PositionStat,
   DashboardSummary,
   DataRequest,
+  Interview,
+  InterviewInput,
   SystemHealth,
   Calibration
 } from './types';
@@ -90,6 +92,9 @@ export interface Api {
   /** ลบทุกใบสมัครของอีเมลในคำขอ (รวมไฟล์ Resume) คืนจำนวนใบสมัครที่ลบ */
   fulfillDataRequest(id: number): Promise<number>;
   rejectDataRequest(id: number): Promise<void>;
+  getInterview(candidateId: string): Promise<Interview | null>;
+  scheduleInterview(candidateId: string, input: InterviewInput, notify: boolean): Promise<void>;
+  cancelInterview(id: number, notify: boolean): Promise<void>;
 
   // สุขภาพระบบและการตรวจเทียบ (HR/Admin)
   systemHealth(): Promise<SystemHealth>;

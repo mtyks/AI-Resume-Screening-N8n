@@ -6,6 +6,7 @@ import type { Candidate, CriterionEval } from '../api';
 import { SCORE_NOTE, STATUS_LABEL, STATUS_ORDER, KIND_LABEL, expFlag, fmtShort, fmtStamp, mustAvg, rowKind, useAsync } from '../lib';
 import { useStats } from '../stats';
 import { ErrorBox, ErrorPeek, Loading } from '../ui';
+import { InterviewCard } from './InterviewCard';
 
 // ต้องตรงกับ check constraint ของคอลัมน์ application_status ในฐานข้อมูล
 const STATUSES = STATUS_ORDER;
@@ -215,6 +216,8 @@ export default function CandidateDetail() {
           </div>
         </div>
       </section>
+
+      <InterviewCard c={c} onChanged={data.reload} />
 
       {c.processing_status === 'processed' && (
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

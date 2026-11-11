@@ -15,6 +15,8 @@ const LABEL: Record<string, string> = {
   candidate_removed: 'ลบผู้สมัคร',
   export_csv: 'ส่งออก CSV',
   bulk_status: 'เปลี่ยนสถานะหลายคน',
+  interview_schedule: 'นัดสัมภาษณ์',
+  interview_cancel: 'ยกเลิกนัดสัมภาษณ์',
   data_request_delete: 'ลบข้อมูลตามคำขอ PDPA',
   data_request_reject: 'ปฏิเสธคำขอลบข้อมูล',
   job_create: 'เพิ่มตำแหน่งงาน',
@@ -52,6 +54,8 @@ export function describeAudit(e: AuditEntry): string {
     case 'status_change': return `${st(d.from)} → ${st(d.to)}`;
     case 'bulk_status': return `${st(e.target)} · เปลี่ยน ${String(d.changed ?? '?')} คน${d.notify ? ' (แจ้งอีเมล)' : ''}`;
     case 'data_request_delete': return `${e.target ?? ''} · ลบ ${String(d.candidates ?? 0)} ใบสมัคร`;
+    case 'interview_schedule': return `${e.target ?? ''} · ${d.at ? new Date(String(d.at)).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : ''}${d.notify ? ' (ส่งอีเมล)' : ''}`;
+    case 'interview_cancel': return `${e.target ?? ''}${d.notify ? ' (แจ้งอีเมล)' : ''}`;
     case 'data_request_reject': return e.target ?? '';
     case 'export_csv': return `${e.target ?? ''} (${String(d.rows ?? '?')} แถว)`;
     case 'job_create': return String(d.name ?? '');

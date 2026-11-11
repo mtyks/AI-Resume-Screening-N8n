@@ -274,3 +274,27 @@ export interface Calibration {
   tn: number;
   disagree: { candidate_id: string; full_name: string; applied_position: string; status: string; score: number; gate: string; thr: number }[];
 }
+
+/** นัดสัมภาษณ์ของผู้สมัคร (ผู้สมัครหนึ่งคนมีนัดที่ยังใช้งานได้ครั้งละหนึ่งนัด) */
+export interface Interview {
+  id: number;
+  candidate_id: string;
+  starts_at: string;
+  duration_min: number;
+  mode: 'onsite' | 'online';
+  location: string | null;
+  note: string | null;
+  status: 'scheduled' | 'cancelled';
+  created_by: string | null;
+  /** null = อีเมลยืนยันยังอยู่ในคิว */
+  confirm_sent_at: string | null;
+  attempts: number;
+}
+
+export interface InterviewInput {
+  starts_at: string;
+  duration_min: number;
+  mode: 'onsite' | 'online';
+  location: string;
+  note: string;
+}
