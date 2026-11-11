@@ -793,7 +793,7 @@ export const mockApi: Api = {
 
   async listFailedCandidates() {
     await sleep(NET);
-    return clone(store.candidates.filter((c) => c.processing_status === 'failed'));
+    return clone(store.candidates.filter((c) => c.processing_status === 'failed' || c.processing_status === 'pending'));
   },
 
   async listUsers() {
