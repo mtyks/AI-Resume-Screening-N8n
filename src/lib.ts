@@ -241,3 +241,13 @@ export function fmtDuration(min: number | null): string {
 export function pctChange(cur: number, prev: number): number | null {
   return prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null;
 }
+
+/** อัตราจากผลตรวจเทียบ: precision = ที่ระบบแนะนำแล้ว HR เห็นด้วย, recall = ที่ HR เห็นด้วยแล้วระบบแนะนำ (null เมื่อหารด้วยศูนย์) */
+export function calibRates(c: { tp: number; fp: number; fn: number; tn: number }) {
+  const div = (a: number, b: number) => (b > 0 ? a / b : null);
+  const n = c.tp + c.fp + c.fn + c.tn;
+  return { n, agree: div(c.tp + c.tn, n), precision: div(c.tp, c.tp + c.fp), recall: div(c.tp, c.tp + c.fn) };
+}
+
+/** อีเมลอย่างง่ายสำหรับตรวจฟอร์ม (ฐานข้อมูลตรวจซ้ำอีกชั้น) */
+export const isEmail = (s: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s.trim()) && s.trim().length <= 254;

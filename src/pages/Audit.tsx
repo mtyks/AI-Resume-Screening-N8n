@@ -14,6 +14,9 @@ const LABEL: Record<string, string> = {
   rescan: 'สั่งสแกนซ้ำ',
   candidate_removed: 'ลบผู้สมัคร',
   export_csv: 'ส่งออก CSV',
+  bulk_status: 'เปลี่ยนสถานะหลายคน',
+  data_request_delete: 'ลบข้อมูลตามคำขอ PDPA',
+  data_request_reject: 'ปฏิเสธคำขอลบข้อมูล',
   job_create: 'เพิ่มตำแหน่งงาน',
   job_update: 'แก้ตำแหน่งงาน/เกณฑ์',
   job_delete: 'ลบตำแหน่งงาน',
@@ -47,6 +50,9 @@ export function describeAudit(e: AuditEntry): string {
   const st = (s: unknown) => STATUS_LABEL[String(s)] ?? String(s ?? '');
   switch (e.action) {
     case 'status_change': return `${st(d.from)} → ${st(d.to)}`;
+    case 'bulk_status': return `${st(e.target)} · เปลี่ยน ${String(d.changed ?? '?')} คน${d.notify ? ' (แจ้งอีเมล)' : ''}`;
+    case 'data_request_delete': return `${e.target ?? ''} · ลบ ${String(d.candidates ?? 0)} ใบสมัคร`;
+    case 'data_request_reject': return e.target ?? '';
     case 'export_csv': return `${e.target ?? ''} (${String(d.rows ?? '?')} แถว)`;
     case 'job_create': return String(d.name ?? '');
     case 'job_delete': return String(d.name ?? '');

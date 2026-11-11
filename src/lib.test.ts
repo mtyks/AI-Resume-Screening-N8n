@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, bkkToday, csvCell, expFlag, fmtRangeTh, groupPeople, itemNote, mustAvg, presetRange } from './lib';
+import { addDays, bkkToday, calibRates, isEmail, csvCell, expFlag, fmtRangeTh, groupPeople, itemNote, mustAvg, presetRange } from './lib';
 import type { Candidate, Job } from './api';
 
 describe('csvCell', () => {
@@ -84,5 +84,31 @@ describe('ช่วงวันที่ Dashboard', () => {
   it('fmtRangeTh วันเดียวไม่ใส่ช่วง', () => {
     expect(fmtRangeTh('2026-11-03', '2026-11-03')).not.toContain('–');
     expect(fmtRangeTh('2026-10-28', '2026-11-03')).toContain('–');
+  });
+});
+
+describe('calibRates', () => {
+  it('คำนวณอัตราจากตารางเทียบผล', () => {
+    const r = calibRates({ tp: 6, fp: 2, fn: 1, tn: 11 });
+    expect(r.n).toBe(20);
+    expect(r.agree).toBeCloseTo(17 / 20);
+    expect(r.precision).toBeCloseTo(6 / 8);
+    expect(r.recall).toBeCloseTo(6 / 7);
+  });
+  it('หารด้วยศูนย์ได้ null ไม่ใช่ NaN', () => {
+    const r = calibRates({ tp: 0, fp: 0, fn: 0, tn: 0 });
+    expect(r.agree).toBeNull();
+    expect(r.precision).toBeNull();
+    expect(r.recall).toBeNull();
+  });
+});
+
+describe('isEmail', () => {
+  it('รับอีเมลปกติและปฏิเสธรูปแบบผิด', () => {
+    expect(isEmail('a@b.co')).toBe(true);
+    expect(isEmail(' a@b.co ')).toBe(true);
+    expect(isEmail('a@b')).toBe(false);
+    expect(isEmail('a b@c.com')).toBe(false);
+    expect(isEmail('')).toBe(false);
   });
 });

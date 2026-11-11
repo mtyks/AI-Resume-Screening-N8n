@@ -1,6 +1,9 @@
 import type { Api } from './api';
 import type {
   AuditEntry,
+  Calibration,
+  DataRequest,
+  SystemHealth,
   ApplicantItem,
   ApplicantKind,
   ApplicantPage,
@@ -355,6 +358,9 @@ const DEMO_SOURCES = ['Facebook', 'JobsDB', 'LinkedIn', 'คนรู้จั�
 const NET = 220; // หน่วงเวลาเล็กน้อยให้เหมือนเรียกเครือข่ายจริง
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
+// คำขอลบข้อมูลในโหมดทดลอง (เก็บในหน่วยความจำ)
+const requestsLocal: DataRequest[] = [];
+
 export const mockApi: Api = {
   async listOpenPositions() {
     await sleep(NET);
@@ -622,6 +628,83 @@ export const mockApi: Api = {
     c.application_status = status;
     persist();
     return { changed: true, queued: notify && Boolean(c.email) };
+  },
+
+  async setApplicationStatusMany(ids, status, notify = true) {
+    void notify;
+    await sleep(NET);
+    let n = 0;
+    for (const id of ids) {
+      const c = store.candidates.find((x) => x.candidate_id === id);
+      if (c && c.application_status !== status) { c.application_status = status; n++; }
+    }
+    persist();
+    return n;
+  },
+
+  async submitDataRequest(input) {
+    await sleep(NET);
+    requestsLocal.unshift({ id: Date.now(), email: input.email.trim().toLowerCase(), full_name: input.name ?? null, note: input.note ?? null, status: 'open', created_at: new Date().toISOString(), handled_at: null, handled_by: null, deleted_count: null });
+  },
+
+  async listDataRequests() {
+    await sleep(NET);
+    return clone(requestsLocal).map((r) => ({ ...r, matches: r.status === 'open' ? store.candidates.filter((c) => c.email.toLowerCase() === r.email).length : undefined }));
+  },
+
+  async fulfillDataRequest(id) {
+    await sleep(NET);
+    const r = requestsLocal.find((x) => x.id === id);
+    if (!r) throw new Error('ไม่พบคำขอ');
+    const ids = store.candidates.filter((c) => c.email.toLowerCase() === r.email).map((c) => c.candidate_id);
+    store.candidates = store.candidates.filter((c) => !ids.includes(c.candidate_id));
+    store.matches = store.matches.filter((x) => !ids.includes(x.candidate_id ?? ''));
+    r.status = 'done'; r.handled_at = new Date().toISOString(); r.handled_by = 'demo@example.com'; r.deleted_count = ids.length;
+    persist();
+    return ids.length;
+  },
+
+  async rejectDataRequest(id) {
+    await sleep(NET / 2);
+    const r = requestsLocal.find((x) => x.id === id);
+    if (r) { r.status = 'rejected'; r.handled_at = new Date().toISOString(); r.handled_by = 'demo@example.com'; }
+  },
+
+  async systemHealth(): Promise<SystemHealth> {
+    await sleep(NET);
+    const cs = store.candidates;
+    return {
+      pending: cs.filter((c) => c.processing_status === 'pending').length,
+      failed: cs.filter((c) => c.processing_status === 'failed').length,
+      processed: cs.filter((c) => c.processing_status === 'processed').length,
+      total: cs.length, oldest_pending_minutes: 0, stuck: 0,
+      last_processed_at: store.matches.map((x) => x.evaluated_at).sort().pop() ?? null,
+      last_success_log_at: store.logs.filter((l) => l.status === 'Success').map((l) => l.timestamp).sort().pop() ?? null,
+      errors_24h: store.logs.filter((l) => l.status === 'Error' && Date.now() - Date.parse(l.timestamp) < 864e5).length,
+      outbox_waiting: 0, outbox_failed: 0, receipt_waiting: 0,
+      open_data_requests: requestsLocal.filter((r) => r.status === 'open').length, next_purge_count: 0
+    };
+  },
+
+  async calibrationSummary(jobId): Promise<Calibration> {
+    await sleep(NET);
+    const rows = store.candidates.flatMap((c) => {
+      const m = store.matches.filter((x) => x.candidate_id === c.candidate_id).sort((a, b) => b.evaluated_at.localeCompare(a.evaluated_at))[0];
+      const j = m && store.jobs.find((x) => x.job_id === m.job_id);
+      if (!m || !j || (jobId && m.job_id !== jobId)) return [];
+      return [{ c, score: m.match_score, gate: m.gate_status, thr: j.match_threshold, sys: m.gate_status === 'Pass' && m.match_score >= j.match_threshold, hr: ['Interview', 'Offer', 'Hired'].includes(c.application_status), decided: c.application_status !== 'In Review' }];
+    });
+    const d = rows.filter((r) => r.decided);
+    const by = new Map<string, number[]>();
+    rows.forEach((r) => by.set(r.c.application_status, [...(by.get(r.c.application_status) ?? []), r.score]));
+    return {
+      scored: rows.length, decided: d.length,
+      by_status: [...by.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([status, v]) => ({ status, n: v.length, avg: Math.round((v.reduce((a, b) => a + b, 0) / v.length) * 10) / 10, min: Math.min(...v), max: Math.max(...v) })),
+      tp: d.filter((r) => r.sys && r.hr).length, fp: d.filter((r) => r.sys && !r.hr).length,
+      fn: d.filter((r) => !r.sys && r.hr).length, tn: d.filter((r) => !r.sys && !r.hr).length,
+      disagree: d.filter((r) => r.sys !== r.hr).sort((a, b) => Math.abs(b.score - b.thr) - Math.abs(a.score - a.thr)).slice(0, 20)
+        .map((r) => ({ candidate_id: r.c.candidate_id, full_name: r.c.full_name, applied_position: r.c.applied_position, status: r.c.application_status, score: r.score, gate: r.gate, thr: r.thr }))
+    };
   },
 
   async pipelineHealth() {

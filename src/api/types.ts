@@ -229,3 +229,48 @@ export interface DashboardSummary {
   skills: { name: string; n: number }[];
   buckets: number[];
 }
+
+/** คำขอลบข้อมูลส่วนบุคคลจากผู้สมัคร (PDPA) */
+export interface DataRequest {
+  id: number;
+  email: string;
+  full_name: string | null;
+  note: string | null;
+  status: 'open' | 'done' | 'rejected';
+  created_at: string;
+  handled_at: string | null;
+  handled_by: string | null;
+  deleted_count: number | null;
+  /** จำนวนใบสมัครที่ตรงกับอีเมลนี้ตอนนี้ (นับฝั่งหน้าเว็บจากข้อมูลที่ดูได้) */
+  matches?: number;
+}
+
+/** สภาพการทำงานของระบบ ณ ตอนนี้ */
+export interface SystemHealth {
+  pending: number;
+  failed: number;
+  processed: number;
+  total: number;
+  oldest_pending_minutes: number;
+  stuck: number;
+  last_processed_at: string | null;
+  last_success_log_at: string | null;
+  errors_24h: number;
+  outbox_waiting: number;
+  outbox_failed: number;
+  receipt_waiting: number;
+  open_data_requests: number;
+  next_purge_count: number;
+}
+
+/** ตรวจเทียบ "ระบบแนะนำ" กับ "ผลตัดสินของ HR" */
+export interface Calibration {
+  scored: number;
+  decided: number;
+  by_status: { status: string; n: number; avg: number | null; min: number | null; max: number | null }[];
+  tp: number;
+  fp: number;
+  fn: number;
+  tn: number;
+  disagree: { candidate_id: string; full_name: string; applied_position: string; status: string; score: number; gate: string; thr: number }[];
+}

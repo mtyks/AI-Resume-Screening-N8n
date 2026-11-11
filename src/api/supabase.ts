@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Api } from './api';
 import type {
   ApplicantItem, ApplicantPage, ApplicationInput, PersonApplication, AuthorizedUser, Candidate, Job, MatchResult,
-  AuditEntry, DashboardSummary, OpenPosition, PositionStat, Role, SubmitResult, SystemConfig, SystemLog
+  AuditEntry, Calibration, DashboardSummary, DataRequest, SystemHealth, OpenPosition, PositionStat, Role, SubmitResult, SystemConfig, SystemLog
 } from './types';
 
 const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -261,6 +261,49 @@ export const supabaseApi: Api = {
   async setApplicationStatus(id, status, notify = true) {
     const changed = Boolean(ok(await sb().rpc('set_application_status', { p_candidate_id: id, p_status: status, p_notify: notify })));
     return { changed, queued: changed && notify };
+  },
+
+  async setApplicationStatusMany(ids, status, notify = true) {
+    return Number(ok(await sb().rpc('set_application_status_many', { p_ids: ids, p_status: status, p_notify: notify })) ?? 0);
+  },
+
+  async submitDataRequest(input) {
+    const { error } = await sb().rpc('submit_data_request', { p_email: input.email, p_name: input.name ?? null, p_note: input.note ?? null });
+    if (error) throw new Error(error.message);
+  },
+
+  async listDataRequests(): Promise<DataRequest[]> {
+    const rows = (ok(await sb().from('data_requests').select('*').order('created_at', { ascending: false }).limit(200)) ?? []) as DataRequest[];
+    // นับใบสมัครที่ตรงกับอีเมลของคำขอที่ยังเปิดอยู่ เพื่อให้ HR เห็นว่าจะลบกี่ใบ
+    const open = rows.filter((r) => r.status === 'open');
+    await Promise.all(open.map(async (r) => {
+      const { count } = await sb().from('candidates').select('candidate_id', { count: 'exact', head: true }).ilike('email', r.email.replace(/[%_]/g, '\\$&'));
+      r.matches = count ?? 0;
+    }));
+    return rows;
+  },
+
+  async fulfillDataRequest(id) {
+    const { data, error } = await sb().rpc('fulfill_data_request', { p_id: id });
+    if (error) throw new Error(error.message);
+    const urls = (data ?? []) as string[];
+    const paths = urls.map((u) => u.match(/\/object\/(?:public\/)?resumes\/(.+)$/)?.[1]).filter((x): x is string => Boolean(x)).map(decodeURIComponent);
+    for (let i = 0; i < paths.length; i += 100) {
+      await sb().storage.from('resumes').remove(paths.slice(i, i + 100));
+    }
+    return urls.length;
+  },
+
+  async rejectDataRequest(id) {
+    ok(await sb().rpc('reject_data_request', { p_id: id }));
+  },
+
+  async systemHealth(): Promise<SystemHealth> {
+    return ok(await sb().rpc('system_health')) as SystemHealth;
+  },
+
+  async calibrationSummary(jobId): Promise<Calibration> {
+    return ok(await sb().rpc('calibration_summary', { p_job_id: jobId })) as Calibration;
   },
 
   async pipelineHealth() {

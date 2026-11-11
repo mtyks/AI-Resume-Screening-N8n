@@ -104,6 +104,7 @@ export default function Apply() {
         </ol>
         <div style={{ marginTop: 'auto', fontSize: 14, color: 'var(--nav-muted)', lineHeight: 1.7 }}>
           ข้อมูลของคุณใช้เพื่อการพิจารณาสมัครงานเท่านั้น
+          <div style={{ marginTop: 8 }}><Link to="/data-request" style={{ color: 'var(--hilite)' }}>ต้องการให้ลบข้อมูลของฉัน</Link></div>
           <div style={{ marginTop: 8 }}><Link to="/login" style={{ color: 'var(--hilite)' }}>สำหรับเจ้าหน้าที่ HR: เข้าสู่ระบบ</Link></div>
         </div>
       </aside>

@@ -13,6 +13,10 @@ const Audit = lazy(() => import('./pages/Audit'));
 const Positions = lazy(() => import('./pages/Positions'));
 const PositionApplicants = lazy(() => import('./pages/PositionApplicants'));
 const Compare = lazy(() => import('./pages/Compare'));
+const DataRequest = lazy(() => import('./pages/DataRequest'));
+const Requests = lazy(() => import('./pages/Requests'));
+const Health = lazy(() => import('./pages/Health'));
+const Calibration = lazy(() => import('./pages/Calibration'));
 
 export default function App() {
   return (
@@ -21,6 +25,7 @@ export default function App() {
       {/* สาธารณะ */}
       <Route path="/" element={<Apply />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/data-request" element={<DataRequest />} />
 
       {/* ฝั่ง HR / Admin */}
       <Route element={<RequireAuth><HrLayout /></RequireAuth>}>
@@ -32,6 +37,9 @@ export default function App() {
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/logs" element={<RequireAuth roles={['Admin']}><Logs /></RequireAuth>} />
         <Route path="/audit" element={<Audit />} />
+        <Route path="/health" element={<Health />} />
+        <Route path="/calibration" element={<Calibration />} />
+        <Route path="/requests" element={<Requests />} />
         <Route path="/admin" element={<RequireAuth roles={['Admin']}><Admin /></RequireAuth>} />
       </Route>
 

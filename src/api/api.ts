@@ -16,7 +16,10 @@ import type {
   PersonApplication,
   DateRange,
   PositionStat,
-  DashboardSummary
+  DashboardSummary,
+  DataRequest,
+  SystemHealth,
+  Calibration
 } from './types';
 
 /**
@@ -60,6 +63,8 @@ export interface Api {
   getCandidate(candidateId: string): Promise<{ candidate: Candidate; match: MatchResult | null; job: Job | null; logs: SystemLog[] } | null>;
   /** เปลี่ยนสถานะการพิจารณา; notify=true จะส่งอีเมลแจ้งผู้สมัครอัตโนมัติ คืน queued=true ถ้าเข้าคิวส่งอีเมลแล้ว */
   setApplicationStatus(candidateId: string, status: string, notify?: boolean): Promise<{ changed: boolean; queued: boolean }>;
+  /** เปลี่ยนสถานะหลายคนพร้อมกัน (สูงสุด 200) คืนจำนวนที่เปลี่ยนจริง */
+  setApplicationStatusMany(candidateIds: string[], status: string, notify?: boolean): Promise<number>;
   /** จำนวนผู้สมัครที่ค้างรอประมวลผลนานผิดปกติ (n8n อาจหยุดทำงาน) */
   pipelineHealth(): Promise<{ stuck: number; oldest_minutes: number }>;
   retryCandidate(candidateId: string): Promise<void>;
@@ -77,6 +82,18 @@ export interface Api {
   listAudit(): Promise<AuditEntry[]>;
   /** บันทึกว่ามีการส่งออก CSV (ชื่อตำแหน่งและจำนวนแถว) */
   logExport(target: string, rows: number): Promise<void>;
+
+  // คำขอลบข้อมูลตาม PDPA
+  /** ผู้สมัครส่งคำขอ (สาธารณะ) ตอบสำเร็จเสมอ ไม่บอกว่าอีเมลนี้เคยสมัครหรือไม่ */
+  submitDataRequest(input: { email: string; name?: string; note?: string }): Promise<void>;
+  listDataRequests(): Promise<DataRequest[]>;
+  /** ลบทุกใบสมัครของอีเมลในคำขอ (รวมไฟล์ Resume) คืนจำนวนใบสมัครที่ลบ */
+  fulfillDataRequest(id: number): Promise<number>;
+  rejectDataRequest(id: number): Promise<void>;
+
+  // สุขภาพระบบและการตรวจเทียบ (HR/Admin)
+  systemHealth(): Promise<SystemHealth>;
+  calibrationSummary(jobId: string | null): Promise<Calibration>;
 
   // ผู้ใช้และการตั้งค่า (Admin)
   listUsers(): Promise<AuthorizedUser[]>;

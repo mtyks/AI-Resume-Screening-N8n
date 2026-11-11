@@ -118,6 +118,24 @@ export default function PositionApplicants() {
     } catch (e) { setNotice({ ok: false, text: e instanceof Error ? e.message : 'สั่งสแกนซ้ำไม่สำเร็จ' }); }
   }
 
+  // เปลี่ยนสถานะหลายคนพร้อมกัน (เลือกสถานะแล้วยืนยันก่อนเสมอ)
+  const [bulkSt, setBulkSt] = useState('');
+  const [bulkMail, setBulkMail] = useState(true);
+  async function bulkStatus(ids: string[]) {
+    if (!bulkSt) return;
+    const label = STATUS_LABEL[bulkSt] ?? bulkSt;
+    if (!window.confirm(`เปลี่ยนสถานะ ${ids.length} คนเป็น “${label}”${bulkMail ? ' และส่งอีเมลแจ้งผู้สมัครทุกคน' : ' (ไม่ส่งอีเมล)'} ?`)) return;
+    setNotice(null);
+    try {
+      const n = await api.setApplicationStatusMany(ids, bulkSt, bulkMail);
+      setNotice({ ok: true, text: `เปลี่ยนสถานะเป็น “${label}” ${n} คนแล้ว${n < ids.length ? ` (อีก ${ids.length - n} คนมีสถานะนี้อยู่แล้ว)` : ''}${bulkMail && n > 0 ? ' อีเมลเข้าคิวส่งแล้ว' : ''}` });
+      setSelected(new Map());
+      setBulkSt('');
+      setVersion((v) => v + 1);
+      reloadStats();
+    } catch (e) { setNotice({ ok: false, text: e instanceof Error ? e.message : 'เปลี่ยนสถานะไม่สำเร็จ' }); }
+  }
+
   async function toggleStar(it: ApplicantItem) {
     try {
       await api.setStarred(it.candidate.candidate_id, !it.candidate.starred);
@@ -328,6 +346,15 @@ export default function PositionApplicants() {
           <button type="button" className="btn small" onClick={() => void markRead(selIds, true)}>ทำเป็นอ่านแล้ว</button>
           <button type="button" className="btn small" onClick={() => void markRead(selIds, false)}>ทำเป็นยังไม่อ่าน</button>
           <button type="button" className="btn small" title="ให้ระบบอ่าน Resume และคิดคะแนนใหม่" onClick={() => void rescan(selIds)}>สแกนซ้ำที่เลือก</button>
+          <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <label htmlFor="bst" className="sr-only">เปลี่ยนสถานะที่เลือกเป็น</label>
+            <select id="bst" className="select" style={{ height: 36 }} value={bulkSt} onChange={(e) => setBulkSt(e.target.value)}>
+              <option value="">เปลี่ยนสถานะเป็น…</option>
+              {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 13.5 }}><input type="checkbox" checked={bulkMail} onChange={(e) => setBulkMail(e.target.checked)} /> แจ้งอีเมล</label>
+            <button type="button" className="btn small primary" disabled={!bulkSt} onClick={() => void bulkStatus(selIds)}>ยืนยัน</button>
+          </span>
           <button type="button" className="btn small" style={{ marginLeft: 'auto' }} onClick={() => setSelected(new Map())}>ล้างที่เลือก</button>
         </div>
       )}
