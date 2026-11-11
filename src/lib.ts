@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ApplicantItem, Candidate, CandidateRow, Job, PersonApplication } from './api';
+import type { ApplicantItem, Candidate, CandidateRow, EvaluationDetail, Job, PersonApplication } from './api';
 
 /** โหลดข้อมูลแบบ async พร้อมสถานะ loading/error และ reload() */
 export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
@@ -82,6 +82,41 @@ export function mustAvg(xs: { confidence: number }[]): number {
 
 /** คำอธิบายวิธีคิดคะแนน (มีแบบเดียว) แสดงในหน้ารายละเอียดผู้สมัคร */
 export const SCORE_NOTE = 'คำนวณจากทักษะและเครื่องมือเท่านั้น ทักษะที่ต้องมีข้อที่พบนับเต็ม 100 ประสบการณ์ไม่นำมาคิดคะแนน';
+
+/** ระดับความมั่นใจที่ AI ใช้ (ตรงกับคำสั่งที่ส่งให้ AI ในขั้นตอนประเมิน) */
+export const RUBRIC: { v: number; label: string; desc: string }[] = [
+  { v: 100, label: 'ชำนาญ', desc: 'พบหลักฐานชัดเจนและแสดงถึงความชำนาญ' },
+  { v: 75, label: 'พบชัดเจน', desc: 'พบหลักฐานชัดเจน' },
+  { v: 50, label: 'พบบางส่วน', desc: 'พบบางส่วนแต่ไม่ชัดเจน (ถือว่า "พบ" ขั้นต่ำ)' },
+  { v: 25, label: 'ใกล้เคียง', desc: 'พบเพียงสิ่งที่ใกล้เคียง' },
+  { v: 0, label: 'ไม่พบ', desc: 'ไม่พบหลักฐานเลย' }
+];
+
+export interface ScorePart { key: 'must' | 'pref' | 'tool'; name: string; n: number; found: number; avg: number; weight: number; part: number; lowest: { criterion: string; confidence: number }[] }
+
+/** แยกคะแนนรวมเป็นส่วนของแต่ละหมวด: คะแนน = ผลรวม(ค่าเฉลี่ยหมวด x น้ำหนัก) / น้ำหนักรวมของหมวดที่มีเกณฑ์ */
+export function scoreBreakdown(job: Pick<Job, 'weight_musthave' | 'weight_preferred' | 'weight_tool'>, d: EvaluationDetail): { parts: ScorePart[]; total: number } {
+  const mean = (xs: { confidence: number }[]) => (xs.length ? xs.reduce((s, x) => s + x.confidence, 0) / xs.length : 0);
+  const defs = [
+    { key: 'must' as const, name: 'ทักษะที่ต้องมี', items: d.must_have_evaluation, w: job.weight_musthave, avg: mustAvg(d.must_have_evaluation) },
+    { key: 'pref' as const, name: 'ทักษะที่ควรมี', items: d.preferred_evaluation, w: job.weight_preferred, avg: mean(d.preferred_evaluation) },
+    { key: 'tool' as const, name: 'เครื่องมือที่ต้องใช้', items: d.tool_evaluation, w: job.weight_tool, avg: mean(d.tool_evaluation) }
+  ].filter((p) => p.items.length > 0);
+  const wsum = defs.reduce((s, p) => s + p.w, 0) || 1;
+  const parts = defs.map((p) => ({
+    key: p.key, name: p.name, n: p.items.length, found: p.items.filter((x) => x.confidence >= FOUND_MIN).length,
+    avg: p.avg, weight: p.w / wsum, part: (p.avg * p.w) / wsum,
+    lowest: [...p.items].sort((a, b) => a.confidence - b.confidence).filter((x) => x.confidence < FOUND_MIN).slice(0, 3)
+  }));
+  return { parts, total: parts.reduce((s, p) => s + p.part, 0) };
+}
+
+/** หลักการและแหล่งอ้างอิงที่ใช้ออกแบบเกณฑ์ (อ้างระดับหลักการ ไม่ได้รับรองค่าตัวเลขของระบบ) */
+export const SCORE_REFS: { principle: string; ref: string }[] = [
+  { principle: 'ประเมินตามเกณฑ์ที่กำหนดล่วงหน้าและให้คะแนนแบบมีโครงสร้าง ใช้กับทุกผู้สมัครเหมือนกัน', ref: 'Schmidt, F. L., & Hunter, J. E. (1998). The validity and utility of selection methods in personnel psychology. Psychological Bulletin, 124(2), 262–274.' },
+  { principle: 'Gate: ทักษะที่ต้องมีขาดข้อใดก็ไม่ผ่าน (noncompensatory/conjunctive) แม้หมวดอื่นสูงก็ชดเชยไม่ได้', ref: 'Einhorn, H. J. (1970). The use of nonlinear, noncompensatory models in decision making. Psychological Bulletin, 73(3), 221–230.' },
+  { principle: 'ระดับ 0–100 มีคำอธิบายกำกับทุกระดับ (anchored rating scale) เพื่อให้ตีความตรงกัน', ref: 'Smith, P. C., & Kendall, L. M. (1963). Retranslation of expectations. Journal of Applied Psychology, 47(2), 149–155.' }
+];
 
 function rangeUpperYears(r: string | null): number | null {
   if (!r) return null;

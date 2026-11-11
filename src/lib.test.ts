@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, bkkToday, calibRates, isEmail, csvCell, expFlag, fmtRangeTh, groupPeople, itemNote, mustAvg, presetRange } from './lib';
+import { addDays, bkkToday, calibRates, isEmail, csvCell, expFlag, fmtRangeTh, groupPeople, itemNote, mustAvg, presetRange, scoreBreakdown } from './lib';
 import type { Candidate, Job } from './api';
 
 describe('csvCell', () => {
@@ -110,5 +110,21 @@ describe('isEmail', () => {
     expect(isEmail('a@b')).toBe(false);
     expect(isEmail('a b@c.com')).toBe(false);
     expect(isEmail('')).toBe(false);
+  });
+});
+
+describe('scoreBreakdown', () => {
+  const w = { weight_musthave: 0.6, weight_preferred: 0.1, weight_tool: 0.3 };
+  const ev = (...c: number[]) => c.map((confidence, i) => ({ criterion: 'k' + i, confidence, evidence: '' }));
+  it('ตรงกับคะแนนที่ระบบบันทึกจริง (ข้อที่ต้องมีที่พบนับ 100)', () => {
+    const r = scoreBreakdown(w, { must_have_evaluation: ev(75, 75), preferred_evaluation: ev(0), tool_evaluation: ev(75, 75) });
+    expect(r.total).toBeCloseTo(82.5, 5);
+    const r2 = scoreBreakdown(w, { must_have_evaluation: ev(75, 0), preferred_evaluation: ev(0), tool_evaluation: ev(75, 0) });
+    expect(r2.total).toBeCloseTo(0.6 * 50 + 0.3 * 37.5, 5);
+  });
+  it('หมวดที่ไม่มีเกณฑ์ไม่นำมาคิดน้ำหนัก', () => {
+    const r = scoreBreakdown(w, { must_have_evaluation: ev(100), preferred_evaluation: [], tool_evaluation: [] });
+    expect(r.parts).toHaveLength(1);
+    expect(r.total).toBe(100);
   });
 });

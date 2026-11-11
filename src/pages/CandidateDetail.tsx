@@ -3,10 +3,11 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 import { api } from '../api';
 import { useAuth } from '../auth';
 import type { Candidate, CriterionEval } from '../api';
-import { SCORE_NOTE, STATUS_LABEL, STATUS_ORDER, KIND_LABEL, expFlag, fmtShort, fmtStamp, mustAvg, rowKind, useAsync } from '../lib';
+import { STATUS_LABEL, STATUS_ORDER, KIND_LABEL, expFlag, fmtShort, fmtStamp, rowKind, useAsync } from '../lib';
 import { useStats } from '../stats';
 import { ErrorBox, ErrorPeek, Loading } from '../ui';
 import { InterviewCard } from './InterviewCard';
+import { ScoreWhy } from './ScoreWhy';
 
 // ต้องตรงกับ check constraint ของคอลัมน์ application_status ในฐานข้อมูล
 const STATUSES = STATUS_ORDER;
@@ -159,13 +160,6 @@ export default function CandidateDetail() {
   const row = { candidate: c, match: m };
   const kind = job ? rowKind(row, job) : 'pending';
   const d = m?.evaluation_detail;
-  const avg = (xs: CriterionEval[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b.confidence, 0) / xs.length) : 0);
-  const wsum = job ? job.weight_musthave + job.weight_preferred + job.weight_tool || 1 : 1;
-  const parts = job && d ? [
-    { name: 'ทักษะที่ต้องมี', w: job.weight_musthave / wsum, a: Math.round(mustAvg(d.must_have_evaluation)) },
-    { name: 'ทักษะที่ควรมี', w: job.weight_preferred / wsum, a: avg(d.preferred_evaluation) },
-    { name: 'เครื่องมือที่ต้องใช้', w: job.weight_tool / wsum, a: avg(d.tool_evaluation) }
-  ] : [];
 
   return (
     <main className="page">
@@ -240,23 +234,7 @@ export default function CandidateDetail() {
         <div style={{ flex: '2 1 620px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
           {m && d && job && (
             <>
-              <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                <div>
-                  <h2 style={{ fontSize: 19, fontWeight: 700, margin: '0 0 4px' }}>ภาพรวมแยกตามหมวด</h2>
-                  <p className="muted" style={{ margin: 0, fontSize: 14 }}>ค่าเฉลี่ยความมั่นใจของ AI ในแต่ละหมวด เทียบกับน้ำหนักที่ตั้งไว้ในตำแหน่ง (ไม่ใช่คะแนนที่ถูกคูณน้ำหนักแล้ว)</p>
-                </div>
-                {parts.map((p) => (
-                  <div key={p.name} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(0,2fr) 64px', gap: '8px 20px', alignItems: 'center' }}>
-                    <div><div style={{ fontSize: 15, fontWeight: 600 }}>{p.name}</div><div className="muted" style={{ fontSize: 13 }}>น้ำหนัก {Math.round(p.w * 100)}%</div></div>
-                    <div className="meter" style={{ height: 10, margin: 0 }}><span style={{ height: 10, width: `${p.a}%`, background: 'var(--accent)' }} /></div>
-                    <div className="mono" style={{ textAlign: 'right', fontSize: 15 }}>{p.a}</div>
-                  </div>
-                ))}
-                <div style={{ borderTop: '1px solid var(--line)', paddingTop: 14, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, fontSize: 14.5 }}>
-                  <span><span className="muted">วิธีคิดคะแนน: </span>{SCORE_NOTE}</span>
-                  <span style={{ fontWeight: 600 }}>Gate: {m.gate_status === 'Pass' ? 'ผ่าน' : m.gate_status.replace('Failed: ', 'ไม่ผ่าน — ')}</span>
-                </div>
-              </section>
+              <ScoreWhy job={job} m={m} d={d} />
 
               <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <h2 style={{ fontSize: 19, fontWeight: 700 }}>ผลประเมินรายเกณฑ์พร้อมหลักฐาน</h2>

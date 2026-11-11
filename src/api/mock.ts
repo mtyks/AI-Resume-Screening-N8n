@@ -1,3 +1,4 @@
+import { mustAvg } from '../lib';
 import type { Api } from './api';
 import type {
   AuditEntry,
@@ -273,11 +274,13 @@ function evaluate(job: Job, c: Candidate): { match: Omit<MatchResult, 'match_id'
   const must = ev(conf(job.must_have_skills, 0).map(([n, v]) => [n, v < 25 ? 30 + (v % 20) : 55 + (v % 45)]));
   const pref = ev(conf(job.preferred_skills, 5));
   const tool = ev(conf(job.required_tools, 9).map(([n, v]) => [n, 40 + (v % 60)]));
-  const tw = job.weight_musthave + job.weight_preferred + job.weight_tool || 1;
-  const score =
-    (job.weight_musthave * avg(must.map((x) => x.confidence)) +
-      job.weight_preferred * avg(pref.map((x) => x.confidence)) +
-      job.weight_tool * avg(tool.map((x) => x.confidence))) / tw;
+  const parts = [
+    { w: job.weight_musthave, v: mustAvg(must), n: must.length },
+    { w: job.weight_preferred, v: avg(pref.map((x) => x.confidence)), n: pref.length },
+    { w: job.weight_tool, v: avg(tool.map((x) => x.confidence)), n: tool.length }
+  ].filter((x) => x.n > 0);
+  const tw = parts.reduce((t, x) => t + x.w, 0) || 1;
+  const score = parts.reduce((t, x) => t + x.v * x.w, 0) / tw;
   const failed = must.find((x) => x.confidence < 50);
   const skills = [...must, ...pref, ...tool].filter((x) => x.confidence >= 50).map((x) => x.criterion);
   return {
