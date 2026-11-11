@@ -279,13 +279,26 @@ export default function CandidateDetail() {
             {job && (() => { const f = expFlag(c, job); return f.level === 'na' ? null : <div className={`alert ${f.level === 'ok' ? 'ok' : f.level === 'low' ? 'warn' : ''}`} style={{ fontSize: 14 }}>{f.label} <span className="muted">· ไม่มีผลต่อคะแนน HR พิจารณาเอง</span></div>; })()}
           </section>
 
-          <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
             <h2 style={{ fontSize: 19, fontWeight: 700 }}>ประวัติการประมวลผล</h2>
             {logs.length === 0 && <span className="muted" style={{ fontSize: 14 }}>ยังไม่มี log</span>}
             {logs.map((l) => (
               <div key={l.log_id} style={{ display: 'flex', gap: 14 }}>
                 <span style={{ width: 12, height: 12, borderRadius: '50%', marginTop: 6, flex: '0 0 12px', background: l.status === 'Success' ? 'var(--accent)' : 'var(--danger-bar)' }} />
-                <div><div style={{ fontSize: 14.5, fontWeight: 600 }}>{l.message}</div><div className="muted mono" style={{ fontSize: 12.5 }}>{fmtStamp(l.timestamp)} · {l.status}</div></div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  {l.message.length > 120 ? (
+                    <>
+                      <div style={{ fontSize: 14.5, fontWeight: 600, overflowWrap: 'anywhere' }}>{l.message.slice(0, 120)}…</div>
+                      <details style={{ marginTop: 4 }}>
+                        <summary style={{ cursor: 'pointer', fontSize: 13.5 }}>ดูข้อความเต็ม</summary>
+                        <div className="mono" style={{ marginTop: 6, fontSize: 12.5, lineHeight: 1.6, background: 'var(--note-bg)', borderRadius: 8, padding: '8px 10px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: 220, overflowY: 'auto' }}>{l.message}</div>
+                      </details>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 14.5, fontWeight: 600, overflowWrap: 'anywhere' }}>{l.message}</div>
+                  )}
+                  <div className="muted mono" style={{ fontSize: 12.5 }}>{fmtStamp(l.timestamp)} · {l.status}</div>
+                </div>
               </div>
             ))}
           </section>

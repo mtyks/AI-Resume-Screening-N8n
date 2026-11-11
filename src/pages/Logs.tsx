@@ -61,7 +61,7 @@ export default function Logs() {
                 <span className="mono muted" style={{ fontSize: 13.5 }}>{fmtStamp(l.timestamp)}</span>
                 <span><span className={`pill ${l.status === 'Success' ? 'pass' : 'gate'}`} style={{ fontSize: 12.5, padding: '3px 11px' }}>{l.status}</span></span>
                 <span className="mono" style={{ fontSize: 13.5 }}>{l.candidate_id ? <Link to={`/candidate/${l.candidate_id}`}>{l.candidate_id}</Link> : '—'}</span>
-                <span>{l.message}</span>
+                <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{l.message}</span>
               </div>
             ))}
           </div>
