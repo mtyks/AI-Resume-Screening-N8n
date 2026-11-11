@@ -87,6 +87,8 @@ function TagEditor({ label, hint, items, cls, addLabel, placeholder, onChange }:
 
 export default function Jobs() {
   const jobs = useAsync(() => api.listJobs(), []);
+  const [jq, setJq] = useState('');
+  const jobsShown = (jobs.data ?? []).filter((x) => { const t = jq.trim().toLowerCase(); return !t || x.position_name.toLowerCase().includes(t) || x.job_id.toLowerCase().includes(t); });
   const [sel, setSel] = useState<string | 'new'>('');
   const [d, setD] = useState<Draft>(emptyDraft());
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -148,7 +150,14 @@ export default function Jobs() {
 
       <div className="split">
         <aside style={{ flex: '1 1 280px', maxWidth: 360, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {jobs.data?.map((j) => (
+          {(jobs.data?.length ?? 0) > 6 && (
+            <div className="field">
+              <label htmlFor="jq" className="sr-only">ค้นหาตำแหน่ง</label>
+              <input id="jq" className="input" type="search" placeholder={`ค้นหาตำแหน่ง (${jobs.data?.length} ตำแหน่ง)`} value={jq} onChange={(e) => setJq(e.target.value)} />
+            </div>
+          )}
+          <div className="joblist">
+          {jobsShown.map((j) => (
             <button key={j.job_id} type="button" onClick={() => pick(j)} aria-current={sel === j.job_id}
               style={{ textAlign: 'left', background: '#fff', border: sel === j.job_id ? '2px solid var(--brand)' : '1px solid var(--line)', borderRadius: 12, padding: sel === j.job_id ? '13px 15px' : '14px 16px', cursor: 'pointer' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -158,6 +167,8 @@ export default function Jobs() {
               <div className="muted" style={{ fontSize: 13, marginTop: 4 }}><span className="mono">{j.job_id}</span> · เกณฑ์ผ่าน {j.match_threshold}</div>
             </button>
           ))}
+          {jobs.data && jobsShown.length === 0 && <div className="muted" style={{ padding: 8, fontSize: 14 }}>ไม่พบตำแหน่งที่ตรงกับ “{jq}”</div>}
+          </div>
           <button type="button" className="btn" style={{ borderStyle: 'dashed', background: 'transparent', borderRadius: 12 }} onClick={startNew}>+ เพิ่มตำแหน่งใหม่</button>
           <p className="muted" style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.5 }}>รหัสตำแหน่งสร้างอัตโนมัติเมื่อบันทึก และแก้ไขภายหลังไม่ได้</p>
         </aside>

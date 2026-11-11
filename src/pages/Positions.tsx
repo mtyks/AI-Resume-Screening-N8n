@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { api, type PersonApplication } from '../api';
 import { KIND_LABEL, STATUS_LABEL, fmtShort, groupPeople, itemNote, useAsync } from '../lib';
 import { useStats } from '../stats';
-import { ErrorBox, Loading, PageHead } from '../ui';
+import { ErrorBox, Loading, PageHead, Pager } from '../ui';
 
 type Sort = 'unread' | 'total' | 'name';
+const PAGE_SIZE = 12;
 
 /** เลือกตำแหน่งเพื่อดูรายชื่อผู้สมัคร: การ์ดต่อตำแหน่งพร้อมสถิติ (รองรับตำแหน่งจำนวนมากด้วยการค้นหา/กรอง) */
 export default function Positions() {
@@ -14,6 +15,9 @@ export default function Positions() {
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [sort, setSort] = useState<Sort>('unread');
+  const [page, setPage] = useState(1);
+  // เปลี่ยนตัวกรอง/คำค้น/การเรียง → กลับไปหน้า 1
+  useEffect(() => { setPage(1); }, [q, onlyUnread, onlyOpen, sort]);
 
   // ค้นหาผู้สมัครข้ามทุกตำแหน่ง (รอผู้ใช้หยุดพิมพ์ 0.3 วินาทีก่อนค้นหา)
   const [pq, setPq] = useState('');
@@ -34,6 +38,10 @@ export default function Positions() {
       .filter((s) => !onlyOpen || s.is_active)
       .sort((a, b) => sort === 'name' ? a.position_name.localeCompare(b.position_name, 'th') : sort === 'total' ? b.total - a.total || b.unread - a.unread : b.unread - a.unread || b.total - a.total);
   }, [stats, q, onlyUnread, onlyOpen, sort]);
+
+  const lastPage = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const cur = Math.min(page, lastPage);
+  const pageRows = shown.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE);
 
   return (
     <main className="page">
@@ -114,7 +122,7 @@ export default function Positions() {
       {stats && shown.length === 0 && <div className="empty">ไม่พบตำแหน่งตามเงื่อนไขที่เลือก</div>}
 
       <div className="poscards">
-        {shown.map((s) => {
+        {pageRows.map((s) => {
           return (
             <Link key={s.job_id} className="poscard" to={`/positions/${s.job_id}`}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
@@ -140,6 +148,7 @@ export default function Positions() {
           );
         })}
       </div>
+      <Pager page={cur} size={PAGE_SIZE} total={shown.length} unit="ตำแหน่ง" onPage={(n) => { setPage(n); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
     </main>
   );
 }

@@ -148,3 +148,34 @@ export function ResumeArt() {
     </div>
   );
 }
+
+/** เลขหน้าที่แสดง: 1 2 … cur-1 cur cur+1 … last-1 last */
+function pageNumbers(cur: number, last: number): (number | '…')[] {
+  const set = new Set([1, 2, cur - 1, cur, cur + 1, last - 1, last].filter((p) => p >= 1 && p <= last));
+  const out: (number | '…')[] = [];
+  let prev = 0;
+  for (const p of [...set].sort((a, b) => a - b)) {
+    if (p - prev > 1) out.push('…');
+    out.push(p);
+    prev = p;
+  }
+  return out;
+}
+
+/** แบ่งหน้าแบบฝั่งหน้าเว็บ (ใช้กับรายการที่โหลดมาครบแล้ว) */
+export function Pager({ page, size, total, unit, onPage }: { page: number; size: number; total: number; unit: string; onPage: (p: number) => void }) {
+  const last = Math.max(1, Math.ceil(total / size));
+  if (total <= size) return null;
+  return (
+    <nav className="pager" aria-label="แบ่งหน้า" style={{ marginTop: 20 }}>
+      <span className="muted" style={{ fontSize: 14 }}>แสดง {(page - 1) * size + 1}–{Math.min(page * size, total)} จาก {total} {unit}</span>
+      <div className="pages">
+        <button type="button" className="pg" disabled={page <= 1} onClick={() => onPage(page - 1)}>‹ ก่อนหน้า</button>
+        {pageNumbers(page, last).map((p, i) => p === '…'
+          ? <span key={`e${i}`} className="muted" style={{ alignSelf: 'center' }}>…</span>
+          : <button key={p} type="button" className="pg" aria-current={p === page ? 'page' : undefined} onClick={() => onPage(p)}>{p}</button>)}
+        <button type="button" className="pg" disabled={page >= last} onClick={() => onPage(page + 1)}>ถัดไป ›</button>
+      </div>
+    </nav>
+  );
+}
