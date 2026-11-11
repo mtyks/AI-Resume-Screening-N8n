@@ -30,7 +30,7 @@ export default function Logs() {
 
   return (
     <main className="page">
-      <PageHead title="สถานะระบบอัตโนมัติ" sub="บันทึกการทำงานของ workflow ทุกครั้ง เรียงจากล่าสุด" />
+      <PageHead title="บันทึกการทำงานของระบบ" sub="บันทึกการทำงานของ workflow ทุกครั้ง เรียงจากล่าสุด" />
       {(logs.error || failed.error) && <ErrorBox message={logs.error ?? failed.error ?? ''} />}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>

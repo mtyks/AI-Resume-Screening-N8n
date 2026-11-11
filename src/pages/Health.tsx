@@ -22,7 +22,7 @@ function Stat({ label, value, tone = 'ok', hint }: { label: string; value: strin
 export function healthIssues(h: SystemHealth): { tone: Tone; text: string }[] {
   const out: { tone: Tone; text: string }[] = [];
   if (h.stuck > 0) out.push({ tone: 'err', text: `มี ${h.stuck} คนรอเกิน 15 นาที (นานสุด ${h.oldest_pending_minutes} นาที) ตรวจว่าเครื่องที่รัน n8n เปิดอยู่ ngrok ยังทำงาน และ workflow เปิดใช้งาน` });
-  if (h.failed > 0) out.push({ tone: 'warn', text: `มี ${h.failed} คนที่ประมวลผลไม่สำเร็จ ดูสาเหตุและกด “สแกนซ้ำ” ได้ที่หน้าสถานะระบบ (Admin) หรือหน้ารายละเอียดผู้สมัคร` });
+  if (h.failed > 0) out.push({ tone: 'warn', text: `มี ${h.failed} คนที่ประมวลผลไม่สำเร็จ ดูสาเหตุและกด “สแกนซ้ำ” ได้ที่หน้าบันทึกการทำงานของระบบ (Admin) หรือหน้ารายละเอียดผู้สมัคร` });
   if (h.errors_24h > 0) out.push({ tone: 'warn', text: `มีข้อผิดพลาดในบันทึกการทำงาน ${h.errors_24h} ครั้งใน 24 ชั่วโมง` });
   if (h.outbox_failed > 0) out.push({ tone: 'warn', text: `อีเมลแจ้งสถานะส่งไม่สำเร็จซ้ำหลายครั้ง ${h.outbox_failed} ฉบับ (ตรวจการเชื่อมต่อ Gmail ใน n8n)` });
   if (h.open_data_requests > 0) out.push({ tone: 'warn', text: `มีคำขอลบข้อมูลรอดำเนินการ ${h.open_data_requests} รายการ` });
@@ -38,7 +38,7 @@ export default function Health() {
   const issues = d ? healthIssues(d) : [];
   return (
     <main className="page">
-      <PageHead title="สุขภาพระบบ" sub="สรุปคิวประมวลผลและอีเมล รีเฟรชอัตโนมัติทุก 1 นาที">
+      <PageHead title="สถานะการประมวลผลของระบบ" sub="สรุปคิวประมวลผลและอีเมล รีเฟรชอัตโนมัติทุก 1 นาที">
         <button type="button" className="btn small" onClick={() => h.reload()}>รีเฟรช</button>
       </PageHead>
       {h.error && <ErrorBox message={h.error} />}

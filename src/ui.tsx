@@ -64,8 +64,8 @@ function HrShell() {
           <NavLink to="/positions" className={link}><IconPeople /> ผู้สมัคร{unreadTotal > 0 && <span className="navbadge" aria-label={`ยังไม่อ่าน ${unreadTotal} คน`}>{unreadTotal > 99 ? '99+' : unreadTotal}</span>}</NavLink>
           <NavLink to="/jobs" className={link}><IconJobs /> ตำแหน่งงาน</NavLink>
           <div className="navgroup">ตรวจสอบระบบ</div>
-          {isAdmin && <NavLink to="/logs" className={link}><IconLog /> สถานะระบบ</NavLink>}
-          <NavLink to="/health" className={link}><IconLog /> สุขภาพระบบ</NavLink>
+          {isAdmin && <NavLink to="/logs" className={link}><IconLog /> บันทึกการทำงานของระบบ</NavLink>}
+          <NavLink to="/health" className={link}><IconLog /> สถานะการประมวลผล</NavLink>
           <NavLink to="/calibration" className={link}><IconDash /> ตรวจเทียบคะแนน</NavLink>
           <div className="navgroup">จัดการ</div>
           <NavLink to="/requests" className={link}><IconUsers /> คำขอลบข้อมูล</NavLink>
@@ -101,7 +101,7 @@ export function ErrorPeek({ message, align = 'left' }: { message: string | null;
         <span className={`errpeek-box${align === 'right' ? ' right' : ''}`} role="dialog" aria-label="ข้อความ error">
           <b>ข้อความ error</b>
           <span className="errpeek-text">{message?.trim() || 'ไม่มีข้อความ error บันทึกไว้'}</span>
-          <span className="muted" style={{ fontSize: 12.5 }}>{session?.role === 'Admin' ? 'ดูประวัติทั้งหมดได้ที่เมนู “สถานะระบบ”' : 'แจ้งผู้ดูแลระบบพร้อมรหัสผู้สมัคร เพื่อตรวจสอบใน log'}</span>
+          <span className="muted" style={{ fontSize: 12.5 }}>{session?.role === 'Admin' ? 'ดูประวัติทั้งหมดได้ที่เมนู “บันทึกการทำงานของระบบ”' : 'แจ้งผู้ดูแลระบบพร้อมรหัสผู้สมัคร เพื่อตรวจสอบใน log'}</span>
           <button type="button" className="btn small" onClick={() => setOpen(false)}>ปิด</button>
         </span>
       )}

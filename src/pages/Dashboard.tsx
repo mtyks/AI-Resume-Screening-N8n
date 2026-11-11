@@ -122,7 +122,7 @@ export default function Dashboard() {
 
   return (
     <main className="page">
-      <PageHead title="ภาพรวม" sub="สิ่งที่ต้องทำก่อน คุณภาพผู้สมัคร และสถานะการสรรหา" />
+      <PageHead title="ภาพรวม" sub="สิ่งที่ต้องทำก่อน คุณภาพผู้สมัคร และสถานะการสมัคร" />
 
       <div className="dfilters">
         <label className="sortsel">
@@ -184,7 +184,7 @@ export default function Dashboard() {
               <InflowChart data={d.inflow} />
             </section>
             <section className="card dcard">
-              <div className="dash-sum-head"><h2>สถานะการสรรหา (Funnel)</h2></div>
+              <div className="dash-sum-head"><h2>สถานะการสมัคร</h2></div>
               <Funnel f={d.funnel} />
               <p className="muted fhint">ขั้นสัมภาษณ์/ข้อเสนอ นับจากสถานะที่ HR ตั้งในหน้าผู้สมัคร</p>
             </section>
@@ -207,7 +207,7 @@ export default function Dashboard() {
       {stats && (
         <section className="card" style={{ padding: 0 }}>
           <div className="dash-sum-head" style={{ padding: '18px 20px 6px' }}>
-            <h2>สุขภาพรายตำแหน่ง{attention > 0 ? ` · ต้องดู ${attention}` : ''}</h2>
+            <h2>สถานะรายตำแหน่ง{attention > 0 ? ` · ต้องดู ${attention}` : ''}</h2>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               <div className="segbtn" role="group" aria-label="ขอบเขตตำแหน่ง">
                 <button type="button" aria-pressed={scope === 'open'} onClick={() => setScope('open')}>เปิดรับ</button>
@@ -234,7 +234,7 @@ export default function Dashboard() {
           )}
           {sorted.length === 0 && <div className="empty">ไม่มีตำแหน่งที่เปิดรับ</div>}
           {sorted.length > 0 && (
-            <div className="ptable" role="table" aria-label="สุขภาพรายตำแหน่ง">
+            <div className="ptable" role="table" aria-label="สถานะรายตำแหน่ง">
               <div className="prow phead" role="row">
                 <span role="columnheader">ตำแหน่ง</span><span role="columnheader">ผู้สมัคร</span>
                 <span role="columnheader">ผลการสแกน</span><span role="columnheader">การกระจายคะแนน</span>
