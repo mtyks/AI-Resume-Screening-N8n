@@ -80,7 +80,7 @@ export default function Compare() {
             </tr>
             {groups.map(([title, names, key]) => names.length === 0 ? null : (
               <Fragment key={title}>
-                <tr><th colSpan={cols.length + 1} style={{ background: '#f6faf7', fontSize: 13, color: 'var(--muted)' }}>{title} — ความมั่นใจของ AI (0–100, ≥ 50 ถือว่าพบ)</th></tr>
+                <tr><th colSpan={cols.length + 1} style={{ background: 'var(--soft-1)', fontSize: 13, color: 'var(--muted)' }}>{title} — ความมั่นใจของ AI (0–100, ≥ 50 ถือว่าพบ)</th></tr>
                 {names.map((n) => {
                   const vals = cols.map((c) => conf(c, key, n));
                   const top = Math.max(...vals.map((v) => v ?? -1));

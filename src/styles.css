@@ -488,6 +488,7 @@ a.prow:hover { background: var(--neutral-bg); }
 [data-theme='dark'] .tag.tool { color: #c9dbd1; }
 [data-theme='dark'] .tag button { background: rgba(255, 255, 255, .14); }
 [data-theme='dark'] .btn { background: #1b2822; }
+[data-theme='dark'] .btn.primary { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
 [data-theme='dark'] .btn:hover { background: #22372e; border-color: #22372e; color: var(--brand-dark); }
 [data-theme='dark'] .btn.primary:hover { background: var(--brand-dark); border-color: var(--brand-dark); color: var(--on-brand); }
 [data-theme='dark'] .btn.danger, [data-theme='dark'] .btn.danger:hover { color: #fff; }

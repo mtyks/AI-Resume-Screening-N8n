@@ -159,7 +159,7 @@ export default function Jobs() {
           <div className="joblist">
           {jobsShown.map((j) => (
             <button key={j.job_id} type="button" onClick={() => pick(j)} aria-current={sel === j.job_id}
-              style={{ textAlign: 'left', background: '#fff', border: sel === j.job_id ? '2px solid var(--brand)' : '1px solid var(--line)', borderRadius: 12, padding: sel === j.job_id ? '13px 15px' : '14px 16px', cursor: 'pointer' }}>
+              style={{ textAlign: 'left', background: 'var(--panel)', color: 'var(--ink)', border: sel === j.job_id ? '2px solid var(--brand)' : '1px solid var(--line)', borderRadius: 12, padding: sel === j.job_id ? '13px 15px' : '14px 16px', cursor: 'pointer' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                 <b style={{ fontSize: 16 }}>{j.position_name}</b>
                 <span className={`pill ${j.is_active ? 'pass' : 'pending'}`} style={{ fontSize: 12.5, padding: '3px 10px' }}>{j.is_active ? 'เปิดรับสมัคร' : 'ปิดรับสมัคร'}</span>

@@ -152,7 +152,7 @@ export default function Apply() {
                     {chosen.description && <p className="muted" style={{ margin: '4px 0 0', fontSize: 14.5 }}>{chosen.description}</p>}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
                       {chosen.must_have_skills.map((x) => <span className="chip" key={x}>{x}</span>)}
-                      {chosen.required_tools.map((x) => <span className="chip" key={x} style={{ background: 'var(--brand)', color: '#fff' }}>{x}</span>)}
+                      {chosen.required_tools.map((x) => <span className="chip" key={x} style={{ background: 'var(--brand)', color: 'var(--on-brand)' }}>{x}</span>)}
                     </div>
                     {(chosen.preferred_skills.length > 0 || chosen.close_at) && (
                       <p className="muted" style={{ margin: '10px 0 0', fontSize: 13.5, lineHeight: 1.6 }}>
