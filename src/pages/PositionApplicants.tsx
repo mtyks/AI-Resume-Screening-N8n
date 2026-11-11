@@ -214,7 +214,7 @@ export default function PositionApplicants() {
           </div>
           <div className="card" style={{ flex: '1 1 340px', padding: '14px 18px', borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={{ fontSize: 14, fontWeight: 600 }}>การกระจายคะแนน <span className="muted" style={{ fontWeight: 400 }}>(เส้นประ = เกณฑ์ผ่าน {stat.match_threshold})</span></span>
-            <div role="img" aria-label={`จำนวนผู้สมัครแยกตามช่วงคะแนน ${stat.buckets.join(', ')}`} style={{ position: 'relative', height: 64, display: 'flex', alignItems: 'flex-end', gap: 4, borderBottom: '1px solid #cfd9d3' }}>
+            <div role="img" aria-label={`จำนวนผู้สมัครแยกตามช่วงคะแนน ${stat.buckets.join(', ')}`} style={{ position: 'relative', height: 64, display: 'flex', alignItems: 'flex-end', gap: 4, borderBottom: '1px solid var(--rule)' }}>
               {stat.buckets.map((n, i) => <div key={i} title={`${i * 10}–${(i + 1) * 10}: ${n} คน`} style={{ flex: 1, height: n ? 6 + (n / maxBucket) * 56 : 3, background: i * 10 >= stat.match_threshold ? 'var(--accent)' : '#bcd6c8', borderRadius: '3px 3px 0 0' }} />)}
               <div style={{ position: 'absolute', left: `${stat.match_threshold}%`, top: 0, bottom: 0, borderLeft: '2px dashed var(--ink)' }} />
             </div>

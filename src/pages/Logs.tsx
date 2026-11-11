@@ -75,7 +75,7 @@ export default function Logs() {
         </div>
         {failed.data?.length === 0 && <span className="muted" style={{ fontSize: 14 }}>ไม่มีรายการค้าง</span>}
         {failed.data?.map((c) => (
-          <div key={c.candidate_id} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 24px', background: '#fbf3f2', borderRadius: 10, padding: '14px 16px' }}>
+          <div key={c.candidate_id} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 24px', background: 'var(--alert-bg)', borderRadius: 10, padding: '14px 16px' }}>
             <Link to={`/candidate/${c.candidate_id}`} className="mono" style={{ fontSize: 14 }}>{c.candidate_id}</Link>
             <span style={{ fontSize: 14.5, flex: '1 1 280px' }}>{c.full_name} · {c.processing_error}</span>
             <button className="btn small" type="button" disabled={retrying === c.candidate_id} onClick={() => void retry(c.candidate_id)}>{retrying === c.candidate_id ? 'กำลังสั่ง…' : 'ประมวลผลใหม่'}</button>

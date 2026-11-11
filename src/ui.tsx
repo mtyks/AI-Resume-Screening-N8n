@@ -31,6 +31,23 @@ export function HrLayout() {
   );
 }
 
+/** สลับโหมดสว่าง/มืด (จำค่าไว้ในเบราว์เซอร์นี้ ถ้าไม่ได้เลือกจะตามระบบ) */
+function ThemeToggle() {
+  const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
+  function flip() {
+    const next = dark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch { /* ใช้ได้ต่อโดยไม่จำค่า */ }
+    setDark(!dark);
+  }
+  return (
+    <button type="button" className="themebtn" onClick={flip} aria-pressed={dark} title={dark ? 'สลับเป็นโหมดสว่าง' : 'สลับเป็นโหมดมืด'}>
+      <svg {...ic} width={18} height={18}>{dark ? <circle cx="12" cy="12" r="4.5" /> : <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />}</svg>
+      {dark ? 'โหมดสว่าง' : 'โหมดมืด'}
+    </button>
+  );
+}
+
 function HrShell() {
   const { session, signOut } = useAuth();
   const { unreadTotal } = useStats();
@@ -55,6 +72,7 @@ function HrShell() {
           <NavLink to="/audit" className={link}><IconLog /> ประวัติการใช้งาน</NavLink>
           {isAdmin && <NavLink to="/admin" className={link}><IconUsers /> ผู้ใช้และตั้งค่า</NavLink>}
         </nav>
+        <ThemeToggle />
         <div className="userbox">
           <span className="avatar" aria-hidden="true">{isAdmin ? 'AD' : 'HR'}</span>
           <div className="who">

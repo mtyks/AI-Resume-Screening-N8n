@@ -32,7 +32,7 @@ function Criteria({ title, items }: { title: string; items: CriterionEval[] }) {
                 <span className="pill" style={{ background: pill[0], color: pill[1], fontSize: 12.5, padding: '3px 10px' }}>{pill[2]}</span>
               </span>
             </div>
-            <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--neutral-ink)', background: '#f8f8f5', borderRadius: 8, padding: '10px 12px' }}>{c.evidence}</div>
+            <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--neutral-ink)', background: 'var(--note-bg)', borderRadius: 8, padding: '10px 12px' }}>{c.evidence}</div>
           </div>
         );
       })}
@@ -272,7 +272,7 @@ export default function CandidateDetail() {
         <div style={{ flex: '1 1 320px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
           <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <h2 style={{ fontSize: 19, fontWeight: 700 }}>Resume</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#f8f8f5', borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--note-bg)', borderRadius: 10, padding: '12px 14px' }}>
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></svg>
               <span style={{ fontSize: 14.5, overflowWrap: 'anywhere' }}>Resume ของ {c.full_name}.pdf</span>
             </div>

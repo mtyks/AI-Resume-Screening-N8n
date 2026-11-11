@@ -75,7 +75,7 @@ export default function Login() {
           </form>}
 
           {!isReal && <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: 'var(--muted)', fontSize: 14 }}>
-            <span style={{ flex: 1, height: 1, background: '#cfd9d3' }} />หรือ<span style={{ flex: 1, height: 1, background: '#cfd9d3' }} />
+            <span style={{ flex: 1, height: 1, background: 'var(--rule)' }} />หรือ<span style={{ flex: 1, height: 1, background: 'var(--rule)' }} />
           </div>}
           <label htmlFor="remember" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, cursor: 'pointer' }}>
             <input id="remember" type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ width: 18, height: 18, accentColor: 'var(--brand)' }} />
